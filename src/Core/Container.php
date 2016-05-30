@@ -81,7 +81,6 @@ class Container implements ContainerInterface, \ArrayAccess
         $this->registeredKeys[$key] = true;
     }
 
-
     /**
      * Fetch an object or a property according to its key
      *
@@ -122,7 +121,6 @@ class Container implements ContainerInterface, \ArrayAccess
         // Return the raw output of the object
         return $this->mixed[$key];
     }
-
 
     /**
      * Gets a property or a callable
