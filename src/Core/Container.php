@@ -70,7 +70,6 @@ class Container implements ContainerInterface, \ArrayAccess
      */
     public function offsetSet($key, $value)
     {
-
         // Check if the key is available
         if (isset($this->frozenKeys[$key])) {
             throw new ContainerException("Cannot assign object or property to an already registered and used key");
@@ -91,7 +90,6 @@ class Container implements ContainerInterface, \ArrayAccess
      */
     public function offsetGet($key)
     {
-
         // Check if the key is available
         if (isset($this->registeredKeys[$key])) {
             throw new NotFoundException(sprintf('Error, key "%s" is not registered', $key));
