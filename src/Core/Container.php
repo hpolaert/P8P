@@ -166,7 +166,12 @@ class Container implements ContainerInterface, \ArrayAccess
      */
     public function offsetUnset($key)
     {
-        unset($this->mixed[$key]);
+        if (isset($this->registeredKeys[$key])) {
+            if (is_object($this->mixed[$key])) {
+                unset($this->storage[$this->$this[$key]]);
+            }
+            unset($this->$this[$key], $this->frozenKeys[$key], $this->objOutput[$key], $this->registeredKeys[$key]);
+        }
     }
 
     /**
@@ -180,7 +185,7 @@ class Container implements ContainerInterface, \ArrayAccess
     public function forceNew($callable)
     {
         // Check if $callable is eligible to reinstatiations
-        if(!method_exists($callable, '__invoke')){
+        if (!method_exists($callable, '__invoke')) {
             throw new ContainerException(sprintf('Callable is not a valid closure'));
         }
 
