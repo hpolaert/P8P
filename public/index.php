@@ -17,3 +17,22 @@ $container["SETTINGS_DB"] = function(){return "e";};
 // $container["SETTINGS_DB"] = "efze";
 print($container["SETTINGS_DB"]);
 
+
+
+class TestA {
+	public function __construct(){
+		print "Hello, i'm class A and i'm being called"
+	}
+	public function __invoke(){
+		return "Hello i'm an invoke class";
+	}
+}
+
+class TestB {
+	public function __construct(){
+
+	}
+	public function __invoke(){
+		return "Hello i'm an invoke class";
+	}
+}
