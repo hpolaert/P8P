@@ -1,2 +1,6 @@
 composer.phar
 vendor/
+.settings/org.eclipse.wst.common.project.facet.core.xml
+*.project
+.settings/org.eclipse.php.core.prefs
+.buildpath
