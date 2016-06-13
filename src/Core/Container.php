@@ -132,7 +132,7 @@ class Container implements ContainerInterface, \ArrayAccess
     public function output($key)
     {
         // Check if the key is available
-        if (isset($this->registeredKeys[$key])) {
+        if (!isset($this->registeredKeys[$key])) {
             throw new NotFoundException(sprintf('Error, key "%s" is not registered', $key));
         }
 
