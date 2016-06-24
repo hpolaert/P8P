@@ -30,6 +30,10 @@ class TestA {
 class TestB {
 	public function __construct(){
 	}
+	
+	public function sayHello(){
+		return "Hello i'm B";
+	}
 }
 
 $anonymousFunction = function(){
@@ -40,6 +44,7 @@ $closureFunction = function($c) use ($closureTest) {
 	return $c . $closureTest;
 };
 
+$blabla = "efzezf";
 $aTestA = new TestA();
 $aTestB = new TestB();
 
@@ -58,6 +63,8 @@ print("<br />Anonymous function : " . var_dump(is_object($anonymousFunction)));
 print("<br />Closure function : " . var_dump(is_object($closureFunction)));
 print("<br />Class A : " . var_dump(is_object($aTestA)));
 print("<br />Class B : " . var_dump(is_object($aTestB)));
+print("<br />Var : " . var_dump(is_object($blabla)));
+
 print("<br />----------- Is closure ----------");
 print("<br />Anonymous function : " . var_dump($anonymousFunction instanceof Closure));
 print("<br />Closure function : " . var_dump($closureFunction instanceof Closure));
@@ -81,3 +88,11 @@ print("<br />Container Anonymous : " . $container->output("Anonymous"));
 print("<br />Container Closure : " . $container->output("Closure"));
 print("<br />---------------------------------");
 print("<br />---------------------------------");
+
+print($container["TestB"]->sayHello());
+
+$booltest = true;
+
+print("<br /><br /><br /><br /><br />");
+
+print("Test" . var_dump($booltest));

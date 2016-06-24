@@ -17,7 +17,7 @@ use P8P\Exception\NotFoundException;
  * Container
  *
  * Simple dependency injection container for providing services throughout
- * the framework (default services are injected through the service provider)
+ * a framework (default services are injected through the service provider)
  *
  * Implements Interop container principles
  */
@@ -201,7 +201,6 @@ class Container implements ContainerInterface, \ArrayAccess
      *
      * @return bool true if key is registered, false if it isn't
      */
-
     public function has($key) : bool
     {
         return $this->offsetExists($key);
