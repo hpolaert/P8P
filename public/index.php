@@ -30,7 +30,7 @@ class TestA {
 class TestB {
 	public function __construct(){
 	}
-	
+
 	public function sayHello(){
 		return "Hello i'm B";
 	}
@@ -96,3 +96,4 @@ $booltest = true;
 print("<br /><br /><br /><br /><br />");
 
 print("Test" . var_dump($booltest));
+print($container["ezfezfe"]);

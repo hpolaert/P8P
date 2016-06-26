@@ -16,7 +16,4 @@ use Exception;
  */
 class ContainerException extends Exception implements \Interop\Container\Exception\ContainerException
 {
-    public function __construct(){
-
-    }
 }

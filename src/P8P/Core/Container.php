@@ -8,7 +8,6 @@
  */
 namespace P8P\Core;
 
-use Closure;
 use Interop\Container\ContainerInterface;
 use P8P\Exception\ContainerException;
 use P8P\Exception\NotFoundException;
@@ -24,19 +23,14 @@ use P8P\Exception\NotFoundException;
 class Container implements ContainerInterface, \ArrayAccess
 {
     /**
-     * @var array Store objects and parameters
+     * @var array Store invokable objects, closures, callbacks and parameters
      */
     protected $mixed = [];
 
     /**
-     * @var array Store objects which should return a new instance
+     * @var array Store invokable objects which should return a new instance
      */
     protected $storage = [];
-
-    /**
-     * @var array Raw output of callables
-     */
-    protected $objOutput = [];
 
     /**
      * @var array When objects are already in used, prevents overriding
@@ -49,10 +43,15 @@ class Container implements ContainerInterface, \ArrayAccess
     protected $registeredKeys = [];
 
     /**
+     * @var array Raw output of an invokable
+     */
+    protected $objOutput = [];
+
+    /**
      * Container instantiation
      *
      * Instantiates a storage facility to store
-     * callables which should return a new instance
+     * invokable objects which should return a new instance
      */
     public function __construct()
     {
@@ -60,10 +59,10 @@ class Container implements ContainerInterface, \ArrayAccess
     }
 
     /**
-     * Assign a new object or property to the container
+     * Assign an invokable object, a closure, a callback or a property
      *
-     * @param mixed $key The offset to assign the object or property
-     * @param mixed $value The object or property to be assigned
+     * @param mixed $key The offset the value is assigned to
+     * @param mixed $value The value to be assigned
      *
      * @throws ContainerException
      * @return void
@@ -75,13 +74,13 @@ class Container implements ContainerInterface, \ArrayAccess
             throw new ContainerException("Cannot assign object or property to an already registered and used key");
         }
 
-        // If it is, disable access to it and store it
+        // If it is, assign and register the value to it
         $this->mixed[$key] = $value;
         $this->registeredKeys[$key] = true;
     }
 
     /**
-     * Fetch an object or a property according to its key
+     * Fetch an invokable object, a closure, a callback or a property according to its key
      *
      * @param mixed $key The offset to retrieve
      *
@@ -95,24 +94,25 @@ class Container implements ContainerInterface, \ArrayAccess
             throw new NotFoundException(sprintf('Error, key "%s" is not registered', $key));
         }
 
-        // If $key refers to an object already invoked, a property or an uninvokable object
+        // If $key does not refers to an invokable object, a closure or a callback
         if (isset($this->objOutput[$key])
-            || !$this->mixed[$key] instanceof Closure
             || !is_object($this->mixed[$key])
             || !method_exists($this->mixed[$key], '__invoke')
         ) {
             // Return it as it is
             return $this->mixed[$key];
-        } elseif (isset($this->storage[$this->mixed[$key]])) {
-            // If the object should be re-instantiated every time
+        }
+
+        // If the object should be re-instantiated every time
+        if (isset($this->storage[$this->mixed[$key]])) {
             return $this->mixed[$key]($this);
         }
 
-        // At this point $key refers to a callable or an object which hasn't already been instantiated
+        // At this point $key refers to an invokable object, a closure or a callback
         $output = $this->mixed[$key];
         $this->mixed[$key] = $output($this);
 
-        // Store raw output and freeze the key
+        // Store raw output and freeze the key to prevent further assignment
         $this->objOutput[$key] = $this->mixed[$key];
         $this->frozenKeys[$key] = true;
 
@@ -121,12 +121,12 @@ class Container implements ContainerInterface, \ArrayAccess
     }
 
     /**
-     * Gets a property or a callable
+     * Gets the content of an invokable object, a closure or a callback
      *
-     * @param string $Key The unique identifier for the parameter or object
+     * @param string $Key The unique identifier to be retrieved
      *
      * @throws NotFoundException if the key is not registered
-     * @return mixed Can return an object or a property
+     * @return mixed Can only return an invokable object, a closure or a callback
      *
      */
     public function output($key)
@@ -141,12 +141,12 @@ class Container implements ContainerInterface, \ArrayAccess
             return $this->objOutput[$key];
         }
 
-        // Call new instance and generate the raw output
+        // Call the instance and generate the raw output
         return $this->mixed[$key];
     }
 
     /**
-     * Check if an object or property is registered to a given key
+     * Check if a given key exists
      *
      * @param mixed $key An offset to check for
      *
@@ -158,7 +158,7 @@ class Container implements ContainerInterface, \ArrayAccess
     }
 
     /**
-     * Erase a registered key from all instances
+     * Erase a registered key from all arrays
      *
      * @param mixed $key
      *
@@ -170,28 +170,29 @@ class Container implements ContainerInterface, \ArrayAccess
             if (is_object($this->mixed[$key])) {
                 unset($this->storage[$this->$this[$key]]);
             }
-            unset($this->$this[$key], $this->frozenKeys[$key], $this->objOutput[$key], $this->registeredKeys[$key]);
+            unset($this->mixed[$key], $this->frozenKeys[$key], $this->objOutput[$key], $this->registeredKeys[$key]);
         }
     }
 
     /**
-     * Store an object assigned to a key into the factory container
+     * Store an invokable object in a storage facility in which
+     * they can be reinstantiated when called
      *
      * @param mixed $key
      *
      * @throws ContainerException if the callable cannot be reinstantiated
      * @return callable returned to the setter
      */
-    public function forceNew($callable)
+    public function forceNew($invokableObject)
     {
         // Check if $callable is eligible to reinstatiations
-        if (!method_exists($callable, '__invoke')) {
-            throw new ContainerException(sprintf('Callable is not a valid closure'));
+        if (!method_exists($invokableObject, '__invoke')) {
+            throw new ContainerException(sprintf('Error, "%s" is not instantiable', $invokableObject));
         }
 
         // Store the callable in the objects library
-        $this->storage->attach($callable);
-        return $callable;
+        $this->storage->attach($invokableObject);
+        return $invokableObject;
     }
 
     /**
