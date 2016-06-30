@@ -36,17 +36,50 @@ use Psr\Http\Message\UriInterface;
 class Uri implements UriInterface
 {
 
+    /**
+     * @var array Allowed schemes
+     */
     private static $ALLOWED_SCHEMES = ['http', 'https', ''];
+    /**
+     * @var int HTTPS default port (can be overridden with the server request constructor)
+     */
     private static $HTTPS_PORT = 443;
+    /**
+     * @var int HTTP default port
+     */
     private static $HTTP_PORT = 80;
 
+    /**
+     * @var URI scheme
+     */
     protected $uriScheme;
+    /**
+     * @var URI user
+     */
     protected $uriUser;
+    /**
+     * @var URI password
+     */
     protected $uriPassword;
+    /**
+     * @var URI host
+     */
     protected $uriHost;
+    /**
+     * @var URI port
+     */
     protected $uriPort;
+    /**
+     * @var URI path
+     */
     protected $uriPath;
+    /**
+     * @var URI query
+     */
     protected $uriQuery;
+    /**
+     * @var URI fragment
+     */
     protected $uriFragment;
 
     /**
@@ -55,6 +88,18 @@ class Uri implements UriInterface
      * ----------------------------------------------
      */
 
+
+    /**
+     * Build URI from the current server request
+     *
+     * Fetch and assign each component of server request URI
+     *
+     * @param array|false $useForwardedHost In case the URI goes through a proxy (used to forward the original host)
+     * @param string|null $customHttpsPort In case a custom HTTPS has been defined
+     *
+     * @throws \RuntimeException
+     * @return void
+     */
     public function buildUriFromServerRequest(bool $useForwardedHost = false, string $customHttpsPort = null)
     {
         // Current URL
@@ -89,6 +134,15 @@ class Uri implements UriInterface
         $this->buildUri(compact($scheme,$user,$password,$port,$path,$host,$query,$fragment));
     }
 
+    /**
+     * Build URI from an associative array
+     *
+     * @param array $uriArguments Build an URI from an associative array, which indexes are :
+     * scheme, user, password, port, host, path, query, fragment
+     *
+     * @throws \InvalidArgumentException
+     * @return void
+     */
     public function buildUriFromArray(array $uriArguments)
     {
         // Make sure the array has at least one value
@@ -99,6 +153,14 @@ class Uri implements UriInterface
         $this->buildUri($uriArguments);
     }
 
+    /**
+     * Build an URI from a given string
+     *
+     * @param string $uri URI as string
+     *
+     * @throws \InvalidArgumentException
+     * @return void
+     */
     public function buildUriFromSting(string $uri)
     {
         // Make sure the array has at least one value
@@ -114,6 +176,15 @@ class Uri implements UriInterface
         $this->buildUri($parsedUri);
     }
 
+    /**
+     * Build URI - Main constructor
+     *
+     * Assign each URI component to the current URI object
+     *
+     * @param array $parsedUri
+     *
+     * @return void
+     */
     private function buildUri(array $parsedUri)
     {
         // Build URI from parsed string URI
@@ -133,6 +204,16 @@ class Uri implements UriInterface
      * ----------------------------------------------
      */
 
+    /**
+     * Unparse URI
+     *
+     * Rebuild an URI string from a parsed URL
+     * Used to "serialize" the current object into a string
+     *
+     * @param array $uriArguments Parsed URL
+     *
+     * @return string URI as a string
+     */
     public function unparseUri(Array $uriArguments) : string
     {
         // Extract each URI parameters
@@ -148,6 +229,18 @@ class Uri implements UriInterface
         return $uriStringOutput;
     }
 
+    /**
+     * Generates a URL-encoded query string from the associative (or indexed) array provided
+     *
+     * Alias to PHP http_build_query method
+     *
+     * @param $queryData An object or an array
+     * @param string|null $numericPrefix Prepend each index of the query with a numeric index
+     * @param string|null $argSeparator Override the default php argument separator (?)
+     * @param int|null $encType PHP_QUERY_RFC1738 or PHP_QUERY_RFC3986 encoding
+     *
+     * @return String
+     */
     public function httpBuildQuery(
         $queryData,
         string $numericPrefix = null,
@@ -159,6 +252,15 @@ class Uri implements UriInterface
         return $this->httpBuildQuery($queryData, $numericPrefix, $argSeparator, $encType);
     }
 
+    /**
+     * Parse Scheme
+     *
+     * Utility method to check the validity of a scheme
+     *
+     * @param string $scheme Scheme to be analysed and filtered
+     *
+     * @return string Filtered scheme
+     */
     private function parseScheme(string $scheme) : string
     {
         if (!is_string($scheme)) {
@@ -171,6 +273,15 @@ class Uri implements UriInterface
         return $scheme;
     }
 
+    /**
+     * Parse Port
+     *
+     * Utility method to check the validity of a port
+     *
+     * @param string $scheme Port to be analysed and filtered
+     *
+     * @return string Filtered port
+     */
     private function parsePort(string $port) : string
     {
         if (!is_integer($port)) {
