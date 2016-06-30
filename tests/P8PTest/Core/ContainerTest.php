@@ -18,7 +18,7 @@ use P8P\Core\Container;
 class ContainerTest extends \PHPUnit_Framework_TestCase
 {
     /**
-     * @var Container Container instance to be reused in test cases
+     * @var Container Container to be reused in test cases
      */
     private $testContainer;
 

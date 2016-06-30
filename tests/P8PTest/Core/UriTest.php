@@ -33,7 +33,7 @@ class UriTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @expectedException \P8P\Exception\NotFoundException
-     * @expectedExceptionMessage Error, key "doesNotExist" is not registered
+     * @expectedExceptionMessage Error, key "doesNotExist" is not regist
      */
     /* public function testNotFoundException()
      {

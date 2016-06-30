@@ -160,7 +160,7 @@ class Container implements ContainerInterface, \ArrayAccess
     /**
      * Erase a registered key from all arrays
      *
-     * @param mixed $key
+     * @param mixed $key Index to be erased
      *
      * @return void
      */
@@ -178,7 +178,7 @@ class Container implements ContainerInterface, \ArrayAccess
      * Store an invokable object in a storage facility in which
      * they can be reinstantiated when called
      *
-     * @param mixed $key
+     * @param mixed $invokableObject Invokable object which should generate new instances
      *
      * @throws ContainerException if the callable cannot be reinstantiated
      * @return callable returned to the setter

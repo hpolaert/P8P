@@ -95,7 +95,7 @@ class Uri implements UriInterface
      * Fetch and assign each component of server request URI
      *
      * @param array|false $useForwardedHost In case the URI goes through a proxy (used to forward the original host)
-     * @param string|null $customHttpsPort In case a custom HTTPS has been defined
+     * @param string|null $customHttpsPort  In case a custom HTTPS has been defined
      *
      * @throws \RuntimeException
      * @return void
@@ -104,41 +104,41 @@ class Uri implements UriInterface
     {
         // Current URL
         $req = $_SERVER;
-        if(empty($req)){
+        if (empty($req)) {
             throw new \RuntimeException('Error, $_SERVER is null or empty');
         }
         // Fetch scheme
-        $https = !empty($req['HTTPS']) && $req['HTTPS'] === 'on';
-        $serverProtocol = $this->parseScheme($req['SERVER_PROTOCOL'] ?? '') ;
-        $scheme = $serverProtocol . ($https ? 's' : '');
+        $https          = !empty($req['HTTPS']) && $req['HTTPS'] === 'on';
+        $serverProtocol = $this->parseScheme($req['SERVER_PROTOCOL'] ?? '');
+        $scheme         = $serverProtocol . ($https ? 's' : '');
         // Fetch port (if default port is used, assign empty string)
-        $port = $this->parsePort($req['SERVER_PORT']) ?? '';
-        $isHttpDefaultPort = !$https && $port === self::$HTTP_PORT;
+        $port               = $this->parsePort($req['SERVER_PORT']) ?? '';
+        $isHttpDefaultPort  = !$https && $port === self::$HTTP_PORT;
         $isHttpsDefaultPort = $https && $port === self::$HTTPS_PORT;
         $isHttpsDefaultPort = !is_null($customHttpsPort) ? ($https && $port === $customHttpsPort) : $isHttpsDefaultPort;
-        $port = ($isHttpDefaultPort || $isHttpsDefaultPort) ? '' : $port;
+        $port               = ($isHttpDefaultPort || $isHttpsDefaultPort) ? '' : $port;
         // Fetch user
-        $user = $req['PHP_AUTH_USER'];
+        $user     = $req['PHP_AUTH_USER'];
         $password = $req['PHP_AUTH_PW'];
         // Fetch host
         $forwardedHost = $useForwardedHost && isset($req['HTTP_X_FORWARDED_HOST']);
-        $basicHost = $req['HTTP_HOST'] ?? null;
-        $host = $forwardedHost ? $req['HTTP_X_FORWARDED_HOST'] : $basicHost;
-        $host = $host ?? $req['SERVER_NAME'];
+        $basicHost     = $req['HTTP_HOST'] ?? null;
+        $host          = $forwardedHost ? $req['HTTP_X_FORWARDED_HOST'] : $basicHost;
+        $host          = $host ?? $req['SERVER_NAME'];
         // Fetch query string
         $query = $req['QUERY_STRING'] ?? '';
         // Fetch path
         $path = parse_url('http://url.com' . $req['REQUEST_URI'], PHP_URL_PATH);
         // Fragment cannot be fetched in php
         $fragment = '';
-        $this->buildUri(compact($scheme,$user,$password,$port,$path,$host,$query,$fragment));
+        $this->buildUri(compact($scheme, $user, $password, $port, $path, $host, $query, $fragment));
     }
 
     /**
      * Build URI from an associative array
      *
      * @param array $uriArguments Build an URI from an associative array, which indexes are :
-     * scheme, user, password, port, host, path, query, fragment
+     *                            scheme, user, password, port, host, path, query, fragment
      *
      * @throws \InvalidArgumentException
      * @return void
@@ -234,10 +234,10 @@ class Uri implements UriInterface
      *
      * Alias to PHP http_build_query method
      *
-     * @param $queryData An object or an array
+     * @param mixed       $queryData     Object or an array
      * @param string|null $numericPrefix Prepend each index of the query with a numeric index
-     * @param string|null $argSeparator Override the default php argument separator (?)
-     * @param int|null $encType PHP_QUERY_RFC1738 or PHP_QUERY_RFC3986 encoding
+     * @param string|null $argSeparator  Override the default php argument separator (?)
+     * @param int|null    $encType       PHP_QUERY_RFC1738 or PHP_QUERY_RFC3986 encoding
      *
      * @return String
      */
@@ -488,14 +488,15 @@ class Uri implements UriInterface
      * An empty scheme is equivalent to removing the scheme.
      *
      * @param string $scheme The scheme to use with the new instance.
+     *
      * @return self A new instance with the specified scheme.
      * @throws \InvalidArgumentException for invalid schemes.
      * @throws \InvalidArgumentException for unsupported schemes.
      */
     public function withScheme($scheme)
     {
-        $scheme = $this->parseScheme($scheme);
-        $clone = clone $this;
+        $scheme           = $this->parseScheme($scheme);
+        $clone            = clone $this;
         $clone->uriScheme = $scheme;
         return $clone;
     }
@@ -510,14 +511,15 @@ class Uri implements UriInterface
      * user; an empty string for the user is equivalent to removing user
      * information.
      *
-     * @param string $user The user name to use for authority.
+     * @param string      $user     The user name to use for authority.
      * @param null|string $password The password associated with $user.
+     *
      * @return self A new instance with the specified user information.
      */
     public function withUserInfo($user, $password = null)
     {
-        $clone = clone $this;
-        $clone->uriUser = $user;
+        $clone              = clone $this;
+        $clone->uriUser     = $user;
         $clone->uriPassword = $password ?? '';
         return $clone;
     }
@@ -531,12 +533,13 @@ class Uri implements UriInterface
      * An empty host value is equivalent to removing the host.
      *
      * @param string $host The hostname to use with the new instance.
+     *
      * @return self A new instance with the specified host.
      * @throws \InvalidArgumentException for invalid hostnames.
      */
     public function withHost($host)
     {
-        $clone = clone $this;
+        $clone          = clone $this;
         $clone->uriHost = $host;
         return $clone;
     }
@@ -554,14 +557,15 @@ class Uri implements UriInterface
      * information.
      *
      * @param null|int $port The port to use with the new instance; a null value
-     *     removes the port information.
+     *                       removes the port information.
+     *
      * @return self A new instance with the specified port.
      * @throws \InvalidArgumentException for invalid ports.
      */
     public function withPort($port)
     {
-        $port = $this->parsePort($port);
-        $clone = clone $this;
+        $port           = $this->parsePort($port);
+        $clone          = clone $this;
         $clone->uriPort = $port;
         return $clone;
     }
@@ -585,13 +589,14 @@ class Uri implements UriInterface
      * Implementations ensure the correct encoding as outlined in getPath().
      *
      * @param string $path The path to use with the new instance.
+     *
      * @return self A new instance with the specified path.
      * @throws \InvalidArgumentException for invalid paths.
      */
     public function withPath($path)
     {
-        $path = rawurlencode($path);
-        $clone = clone $this;
+        $path           = rawurlencode($path);
+        $clone          = clone $this;
         $clone->uriPath = $path;
         return $clone;
     }
@@ -608,13 +613,14 @@ class Uri implements UriInterface
      * An empty query string value is equivalent to removing the query string.
      *
      * @param string $query The query string to use with the new instance.
+     *
      * @return self A new instance with the specified query string.
      * @throws \InvalidArgumentException for invalid query strings.
      */
     public function withQuery($query)
     {
-        $query = rawurlencode($query);
-        $clone = clone $this;
+        $query          = rawurlencode($query);
+        $clone          = clone $this;
         $clone->uriPath = $query;
         return $clone;
     }
@@ -631,12 +637,13 @@ class Uri implements UriInterface
      * An empty fragment value is equivalent to removing the fragment.
      *
      * @param string $fragment The fragment to use with the new instance.
+     *
      * @return self A new instance with the specified fragment.
      */
     public function withFragment($fragment)
     {
-        $fragment = rawurlencode($fragment);
-        $clone = clone $this;
+        $fragment       = rawurlencode($fragment);
+        $clone          = clone $this;
         $clone->uriPath = $fragment;
         return $clone;
     }
@@ -667,13 +674,13 @@ class Uri implements UriInterface
     public function __toString()
     {
         // Extract each URI parameters
-        $uriArray['scheme'] = $this->uriScheme;
-        $uriArray['host'] = $this->uriHost;
-        $uriArray['user'] = $this->uriUser;
+        $uriArray['scheme']   = $this->uriScheme;
+        $uriArray['host']     = $this->uriHost;
+        $uriArray['user']     = $this->uriUser;
         $uriArray['password'] = $this->uriPassword;
-        $uriArray['port'] = $this->uriPort;
-        $uriArray['path'] = $this->uriPath;
-        $uriArray['query'] = $this->uriQuery;
+        $uriArray['port']     = $this->uriPort;
+        $uriArray['path']     = $this->uriPath;
+        $uriArray['query']    = $this->uriQuery;
         $uriArray['fragment'] = $this->uriFragment;
         return $this->unparseUri($uriArray);
     }
