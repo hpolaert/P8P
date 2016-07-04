@@ -117,7 +117,8 @@ class Uri implements UriInterface
         $path = parse_url('http://url.com' . $req['REQUEST_URI'], PHP_URL_PATH);
         // Fragment cannot be fetched in php
         $fragment = '';
-        return new static(compact($scheme, $user, $pass, $port, $path, $host, $query, $fragment));
+        return new static(compact($scheme, $user, $pass, $port, $path, $host, $query, $fragment), $https,
+            $customHttpsPort);
     }
 
     /**
