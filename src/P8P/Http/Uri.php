@@ -35,20 +35,6 @@ use Psr\Http\Message\UriInterface;
  */
 class Uri implements UriInterface
 {
-
-    /**
-     * @var array Allowed schemes
-     */
-    private static $ALLOWED_SCHEMES = ['http', 'https', ''];
-    /**
-     * @var int HTTPS default port (can be overridden with the server request constructor)
-     */
-    private static $HTTPS_PORT = 443;
-    /**
-     * @var int HTTP default port
-     */
-    private static $HTTP_PORT = 80;
-
     /**
      * @var URI scheme
      */
@@ -98,9 +84,9 @@ class Uri implements UriInterface
      * @param string|null $customHttpsPort  In case a custom HTTPS has been defined
      *
      * @throws \RuntimeException
-     * @return void
+     * @return self
      */
-    public function buildUriFromServerRequest(bool $useForwardedHost = false, string $customHttpsPort = null)
+    public static function buildUriFromServerRequest(bool $useForwardedHost = false, string $customHttpsPort = null)
     {
         // Current URL
         $req = $_SERVER;
@@ -109,17 +95,17 @@ class Uri implements UriInterface
         }
         // Fetch scheme
         $https          = !empty($req['HTTPS']) && $req['HTTPS'] === 'on';
-        $serverProtocol = $this->parseScheme($req['SERVER_PROTOCOL'] ?? '');
+        $serverProtocol = $req['SERVER_PROTOCOL'] ?? '';
         $scheme         = $serverProtocol . ($https ? 's' : '');
         // Fetch port (if default port is used, assign empty string)
-        $port               = $this->parsePort($req['SERVER_PORT']) ?? '';
-        $isHttpDefaultPort  = !$https && $port === self::$HTTP_PORT;
-        $isHttpsDefaultPort = $https && $port === self::$HTTPS_PORT;
+        $port               = $req['SERVER_PORT'] ?? '';
+        $isHttpDefaultPort  = !$https && $port === '80';
+        $isHttpsDefaultPort = $https && $port === '443';
         $isHttpsDefaultPort = !is_null($customHttpsPort) ? ($https && $port === $customHttpsPort) : $isHttpsDefaultPort;
         $port               = ($isHttpDefaultPort || $isHttpsDefaultPort) ? '' : $port;
         // Fetch user
-        $user     = $req['PHP_AUTH_USER'];
-        $password = $req['PHP_AUTH_PW'];
+        $user = $req['PHP_AUTH_USER'];
+        $pass = $req['PHP_AUTH_PW'];
         // Fetch host
         $forwardedHost = $useForwardedHost && isset($req['HTTP_X_FORWARDED_HOST']);
         $basicHost     = $req['HTTP_HOST'] ?? null;
@@ -131,38 +117,48 @@ class Uri implements UriInterface
         $path = parse_url('http://url.com' . $req['REQUEST_URI'], PHP_URL_PATH);
         // Fragment cannot be fetched in php
         $fragment = '';
-        $this->buildUri(compact($scheme, $user, $password, $port, $path, $host, $query, $fragment));
+        return new static(compact($scheme, $user, $pass, $port, $path, $host, $query, $fragment));
     }
 
     /**
      * Build URI from an associative array
      *
-     * @param array $uriArguments Build an URI from an associative array, which indexes are :
-     *                            scheme, user, password, port, host, path, query, fragment
+     * @param array       $uriArguments     Build an URI from an associative array, which indexes are :
+     *                                      scheme, user, password, port, host, path, query, fragment
+     * @param array|false $useForwardedHost In case the URI goes through a proxy (used to forward the original host)
+     * @param string|null $customHttpsPort  In case a custom HTTPS has been defined
      *
      * @throws \InvalidArgumentException
-     * @return void
+     * @return self
      */
-    public function buildUriFromArray(array $uriArguments)
-    {
+    public static function buildUriFromArray(
+        array $uriArguments,
+        bool $useForwardedHost = false,
+        string $customHttpsPort = null
+    ) {
         // Make sure the array has at least one value
         if (empty($uriArguments)) {
             throw new \InvalidArgumentException('Error, provided URI arguments array is empty');
         }
         // Build URI from array
-        $this->buildUri($uriArguments);
+        return new static($uriArguments, $useForwardedHost, $customHttpsPort);
     }
 
     /**
      * Build an URI from a given string
      *
-     * @param string $uri URI as string
+     * @param string      $uri              URI as string
+     * @param array|false $useForwardedHost In case the URI goes through a proxy (used to forward the original host)
+     * @param string|null $customHttpsPort  In case a custom HTTPS has been defined
      *
      * @throws \InvalidArgumentException
-     * @return void
+     * @return self
      */
-    public function buildUriFromSting(string $uri)
-    {
+    public static function buildUriFromSting(
+        string $uri,
+        bool $useForwardedHost = false,
+        string $customHttpsPort = null
+    ) {
         // Make sure the array has at least one value
         if (!isset($uri) || trim($uri) === '') {
             throw new \InvalidArgumentException('Error, provided URI string is null or empty');
@@ -173,7 +169,7 @@ class Uri implements UriInterface
             throw new \InvalidArgumentException('Error, provided URI is not properly formatted / cannot be parsed');
         }
         // Build URI from parsed string
-        $this->buildUri($parsedUri);
+        return new static($parsedUri, $useForwardedHost, $customHttpsPort);
     }
 
     /**
@@ -181,21 +177,27 @@ class Uri implements UriInterface
      *
      * Assign each URI component to the current URI object
      *
-     * @param array $parsedUri
+     * @param array       $parsedUri
+     * @param array|false $useForwardedHost In case the URI goes through a proxy (used to forward the original host)
+     * @param string|null $customHttpsPort  In case a custom HTTPS has been defined
      *
      * @return void
      */
-    private function buildUri(array $parsedUri)
-    {
+    public function __construct(
+        array $parsedUri,
+        bool $useForwardedHost = false,
+        string $customHttpsPort = null
+    ) {
         // Build URI from parsed string URI
         $this->uriScheme   = $this->parseScheme(($parsedUri['scheme']) ?? '');
         $this->uriUser     = $parsedUri['user'] ?? '';
-        $this->uriPassword = $parsedUri['password'] ?? '';
-        $this->uriPort     = isset($parsedUri['port']) ? $this->parsePort($parsedUri['port']) : '';
+        $this->uriPassword = $parsedUri['pass'] ?? '';
+        $this->uriPort     = isset($parsedUri['port']) ? $this->parsePort($parsedUri['port'],
+            $this->uriScheme === 'https', $customHttpsPort) : '';
         $this->uriHost     = $parsedUri['host'] ?? '';
-        $this->uriPath     = rawurlencode($parsedUri['path'] ?? '/');
-        $this->uriQuery    = rawurlencode($parsedUri['query'] ?? '');
-        $this->uriFragment = rawurlencode($parsedUri['fragment' ?? '']);
+        $this->uriPath     = $this->urlEncode($parsedUri['path'] ?? '/');
+        $this->uriQuery    = $this->urlEncode($parsedUri['query'] ?? '');
+        $this->uriFragment = $this->urlEncode($parsedUri['fragment'] ?? '');
     }
 
     /**
@@ -214,18 +216,18 @@ class Uri implements UriInterface
      *
      * @return string URI as a string
      */
-    public function unparseUri(Array $uriArguments) : string
+    public static function unparseUri(Array $uriArguments) : string
     {
         // Extract each URI parameters
-        $uriStringOutput = isset($uriArguments['scheme']) ? $this->parseScheme($uriArguments['scheme']) . '://' : '';
+        $uriStringOutput = isset($uriArguments['scheme']) ? $uriArguments['scheme'] . '://' : '';
         $uriStringOutput .= $uriArguments['host'] ?? '';
-        $uriStringOutput .= isset($uriArguments['port']) ? ':' . $this->parseScheme($uriArguments['port']) : '';
+        $uriStringOutput .= isset($uriArguments['port']) ? ':' . $uriArguments['port'] : '';
         $uriStringOutput .= $uriArguments['user'] ?? '';
-        $uriStringOutput .= isset($uriArguments['password']) ? ':' . $uriArguments['password'] : '';
+        $uriStringOutput .= isset($uriArguments['pass']) ? ':' . $uriArguments['pass'] : '';
         $uriStringOutput .= ($uriArguments['user'] || $uriArguments['pass']) ? '@' : '';
-        $uriStringOutput .= isset($uriArguments['path']) ? rawurlencode($uriArguments['path']) : '';
-        $uriStringOutput .= isset($uriArguments['query']) ? '?' . rawurlencode($uriArguments['query']) : '';
-        $uriStringOutput .= isset($uriArguments['fragment']) ? '#' . rawurlencode($uriArguments['fragment']) : '';
+        $uriStringOutput .= isset($uriArguments['path']) ? $uriArguments['path'] : '';
+        $uriStringOutput .= isset($uriArguments['query']) ? '?' . $uriArguments['query'] : '';
+        $uriStringOutput .= isset($uriArguments['fragment']) ? '#' . $uriArguments['fragment'] : '';
         return $uriStringOutput;
     }
 
@@ -241,7 +243,7 @@ class Uri implements UriInterface
      *
      * @return String
      */
-    public function httpBuildQuery(
+    public static function httpBuildQuery(
         $queryData,
         string $numericPrefix = null,
         string $argSeparator = null,
@@ -249,7 +251,7 @@ class Uri implements UriInterface
     ) : String
     {
         // Alias to http_build_query PHP function
-        return $this->httpBuildQuery($queryData, $numericPrefix, $argSeparator, $encType);
+        return http_build_query($queryData, $numericPrefix, $argSeparator, $encType);
     }
 
     /**
@@ -261,13 +263,10 @@ class Uri implements UriInterface
      *
      * @return string Filtered scheme
      */
-    private function parseScheme(string $scheme) : string
+    protected function parseScheme(string $scheme) : string
     {
-        if (!is_string($scheme)) {
-            throw new \InvalidArgumentException('Error, scheme must be a string');
-        }
         $scheme = strtolower(str_replace('://', '', $scheme));
-        if (!in_array($scheme, self::$ALLOWED_SCHEMES)) {
+        if (!in_array($scheme, ['http', 'https', ''])) {
             throw new \InvalidArgumentException('Error, scheme must be either http, https or an empty string');
         }
         return $scheme;
@@ -278,19 +277,40 @@ class Uri implements UriInterface
      *
      * Utility method to check the validity of a port
      *
-     * @param string $scheme Port to be analysed and filtered
+     * @param string      $scheme           Port to be analysed and filtered
+     * @param array|false $useForwardedHost In case the URI goes through a proxy (used to forward the original host)
+     * @param string|null $customHttpsPort  In case a custom HTTPS has been defined
      *
      * @return string Filtered port
      */
-    private function parsePort(string $port) : string
+    protected function parsePort(
+        string $port,
+        bool $https = false,
+        string $customHttpsPort = null
+    ) : string
     {
-        if (!is_integer($port)) {
-            throw new \InvalidArgumentException('Error, port must be an integer');
-        }
-        if (preg_match('/^[\d]{0,6}$/', $port)) {
+        if ($port !== '' && !preg_match('/^[\d]{1,5}$/', $port)) {
             throw new \InvalidArgumentException('Error, port length must be between 1 and 5 digits');
         }
+        $isHttpDefaultPort  = !$https && $port === '80';
+        $isHttpsDefaultPort = $https && $port === '443';
+        $isHttpsDefaultPort = !is_null($customHttpsPort) ? ($https && $port === $customHttpsPort) : $isHttpsDefaultPort;
+        $port               = ($isHttpDefaultPort || $isHttpsDefaultPort) ? '' : $port;
         return $port;
+    }
+
+    /**
+     * URL Encode
+     *
+     * Utility method to rawurlencode each part of an url without encoding slashes
+     *
+     * @param string $url
+     *
+     * @return string Reformatted URL
+     */
+    protected function urlEncode(string $url) : string
+    {
+        return str_replace(' ', '%20', $url);
     }
 
     /**
@@ -571,6 +591,35 @@ class Uri implements UriInterface
     }
 
     /**
+     * UtilityMethod to check default ports (not part of PSR7)
+     *
+     * Return an instance with the specified port.
+     *
+     * This method MUST retain the state of the current instance, and return
+     * an instance that contains the specified port.
+     *
+     * Implementations MUST raise an exception for ports outside the
+     * established TCP and UDP port ranges.
+     *
+     * A null value provided for the port is equivalent to removing the port
+     * information.
+     *
+     * @param null|int    $port            The port to use with the new instance; a null value
+     *                                     removes the port information.
+     * @param string|null $customHttpsPort In case a custom HTTPS has been defined
+     *
+     * @return self A new instance with the specified port.
+     * @throws \InvalidArgumentException for invalid ports.
+     */
+    public function withCustomHttpsPort($port, $customHttpsPort = 443)
+    {
+        $port           = $this->parsePort($port, $this->getScheme() === 'https', $customHttpsPort);
+        $clone          = clone $this;
+        $clone->uriPort = $port;
+        return $clone;
+    }
+
+    /**
      * Return an instance with the specified path.
      *
      * This method MUST retain the state of the current instance, and return
@@ -595,7 +644,7 @@ class Uri implements UriInterface
      */
     public function withPath($path)
     {
-        $path           = rawurlencode($path);
+        $path           = $this->urlEncode($path);
         $clone          = clone $this;
         $clone->uriPath = $path;
         return $clone;
@@ -619,9 +668,9 @@ class Uri implements UriInterface
      */
     public function withQuery($query)
     {
-        $query          = rawurlencode($query);
-        $clone          = clone $this;
-        $clone->uriPath = $query;
+        $query           = $this->urlEncode($query);
+        $clone           = clone $this;
+        $clone->uriQuery = $query;
         return $clone;
     }
 
@@ -642,9 +691,9 @@ class Uri implements UriInterface
      */
     public function withFragment($fragment)
     {
-        $fragment       = rawurlencode($fragment);
-        $clone          = clone $this;
-        $clone->uriPath = $fragment;
+        $fragment           = $this->urlEncode($fragment);
+        $clone              = clone $this;
+        $clone->uriFragment = $fragment;
         return $clone;
     }
 
@@ -674,14 +723,14 @@ class Uri implements UriInterface
     public function __toString()
     {
         // Extract each URI parameters
-        $uriArray['scheme']   = $this->uriScheme;
+        $uriArray['scheme']   = $this->parseScheme($this->uriScheme);
         $uriArray['host']     = $this->uriHost;
         $uriArray['user']     = $this->uriUser;
-        $uriArray['password'] = $this->uriPassword;
-        $uriArray['port']     = $this->uriPort;
-        $uriArray['path']     = $this->uriPath;
-        $uriArray['query']    = $this->uriQuery;
-        $uriArray['fragment'] = $this->uriFragment;
-        return $this->unparseUri($uriArray);
+        $uriArray['pass']     = $this->uriPassword;
+        $uriArray['port']     = $this->parsePort($this->uriPort, $this->parseScheme($this->uriScheme) === 'https');
+        $uriArray['path']     = $this->urlEncode($this->uriPath);
+        $uriArray['query']    = $this->urlEncode($this->uriQuery);
+        $uriArray['fragment'] = $this->urlEncode($this->uriFragment);
+        return self::unparseUri($uriArray);
     }
 }

@@ -96,4 +96,8 @@ $booltest = true;
 print("<br /><br /><br /><br /><br />");
 
 print("Test" . var_dump($booltest));
-print($container["ezfezfe"]);
+
+
+print(var_dump($_SERVER['SERVER_PORT']));
+
+$a = new \P8P\Http\Uri();
