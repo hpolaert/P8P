@@ -74,7 +74,6 @@ class Uri implements UriInterface
      * ----------------------------------------------
      */
 
-
     /**
      * Build URI from the current server request
      *
