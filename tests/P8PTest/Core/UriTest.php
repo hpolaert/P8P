@@ -37,14 +37,62 @@ class UriTest extends \PHPUnit_Framework_TestCase
     const MOCK_PATH_SPACE = 'http://www.test.com/i have/spaces in my uri';
     const MOCK_PATH_SPACE_ARGS = 'http://www.test.com/i have/spaces in my uri/?var1=hello this is space&var2=world';
     const MOCK_PATH_MULTIPLE = 'http://www.test.com/hello/world';
+    protected $MOCK_SERVER          = [];
+    protected $MOCK_URI_ARRAY_HTTP  = [];
+    protected $MOCK_URI_ARRAY_HTTPS = [];
 
     /**
-     * @Covers Uri::buildUriFromSting
+     * Build mock server request
+     * Simulate a $_SERVER request
+     */
+    public function __construct()
+    {
+        $this->MOCK_SERVER          = [
+            'SERVER_PROTOCOL'      => 'HTTP/1.1',
+            'REQUEST_METHOD'       => 'GET',
+            'SCRIPT_NAME'          => '/test/hello/world.php',
+            'REQUEST_URI'          => '/test/hello/world.php?hello=world',
+            'QUERY_STRING'         => 'hello=world',
+            'SERVER_NAME'          => 'localhost',
+            'SERVER_PORT'          => 80,
+            'HTTP_HOST'            => 'localhost',
+            'HTTP_ACCEPT'          => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'HTTP_ACCEPT_LANGUAGE' => 'en-US,en;q=0.8',
+            'HTTP_ACCEPT_CHARSET'  => 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
+            'HTTP_USER_AGENT'      => 'Test',
+            'REMOTE_ADDR'          => '127.0.0.1',
+            'REQUEST_TIME'         => time(),
+            'REQUEST_TIME_FLOAT'   => microtime(true)
+        ];
+        $this->MOCK_URI_ARRAY_HTTP  = [
+            'scheme'   => 'http',
+            'user'     => 'test',
+            'password' => 'azerty123',
+            'port'     => '80',
+            'host'     => 'localhost',
+            'path'     => '/test.php',
+            'query'    => 'hello=world&test=123',
+            'fragment' => ''
+        ];
+        $this->MOCK_URI_ARRAY_HTTPS = [
+            'scheme'   => 'https',
+            'user'     => 'test',
+            'password' => 'azerty123',
+            'port'     => '80',
+            'host'     => 'localhost',
+            'path'     => '/test.php',
+            'query'    => 'hello=world&test=123',
+            'fragment' => ''
+        ];
+    }
+
+    /**
+     * @Covers Uri::buildUriFromString
      * @Covers Uri::withScheme
      */
     public function testShouldReturnACloneInstance()
     {
-        $uriOrigin = Uri::buildUriFromSting(self::MOCK_BASIC_URI_REQUEST);
+        $uriOrigin = Uri::buildUriFromString(self::MOCK_BASIC_URI_REQUEST);
         $uriClone  = $uriOrigin->withScheme('http');
         $this->assertNotSame($uriOrigin, $uriClone);
     }
@@ -55,11 +103,11 @@ class UriTest extends \PHPUnit_Framework_TestCase
      */
     public function testScheme()
     {
-        $uriBasic = Uri::buildUriFromSting(self::MOCK_BASIC_URI_REQUEST);
-        $uriHttps = Uri::buildUriFromSting(self::MOCK_HTTPS_REQUEST);
-        $uriEmpty = Uri::buildUriFromSting(self::MOCK_EMPTY_SCHEME);
-        $uriUser  = Uri::buildUriFromSting(self::MOCK_USER_PSWRD);
-        $uriPort  = Uri::buildUriFromSting(self::MOCK_CUST_PORT);
+        $uriBasic = Uri::buildUriFromString(self::MOCK_BASIC_URI_REQUEST);
+        $uriHttps = Uri::buildUriFromString(self::MOCK_HTTPS_REQUEST);
+        $uriEmpty = Uri::buildUriFromString(self::MOCK_EMPTY_SCHEME);
+        $uriUser  = Uri::buildUriFromString(self::MOCK_USER_PSWRD);
+        $uriPort  = Uri::buildUriFromString(self::MOCK_CUST_PORT);
         $this->assertEquals('http', $uriBasic->getScheme());
         $this->assertEquals('https', $uriHttps->getScheme());
         $this->assertEquals('', $uriEmpty->getScheme());
@@ -75,8 +123,8 @@ class UriTest extends \PHPUnit_Framework_TestCase
      */
     public function testParseSchemeNotAllowedException()
     {
-        Uri::buildUriFromSting(self::MOCK_INT_SCHEME);
-        Uri::buildUriFromSting(self::MOCK_NOT_ALLOWED_SCHEME);
+        Uri::buildUriFromString(self::MOCK_INT_SCHEME);
+        Uri::buildUriFromString(self::MOCK_NOT_ALLOWED_SCHEME);
     }
 
     /**
@@ -85,13 +133,13 @@ class UriTest extends \PHPUnit_Framework_TestCase
      */
     public function testPort()
     {
-        $uriEmpty        = Uri::buildUriFromSting(self::MOCK_EMPTY_SCHEME);
-        $uriUser         = Uri::buildUriFromSting(self::MOCK_USER_PSWRD);
-        $uriPort         = Uri::buildUriFromSting(self::MOCK_CUST_PORT);
-        $uriDefHttpPort  = Uri::buildUriFromSting(self::MOCK_DEFAULT_PORT_HTTP);
-        $uriDefHttpsPort = Uri::buildUriFromSting(self::MOCK_DEFAULT_PORT_HTTPS);
-        $uriOthHttpsPort = Uri::buildUriFromSting(self::MOCK_CUSTOM_OTHER_PORT_HTTPS);
-        $uriCusHttpsPort = Uri::buildUriFromSting(self::MOCK_CUSTOM_PORT_HTTPS, true, '800');
+        $uriEmpty        = Uri::buildUriFromString(self::MOCK_EMPTY_SCHEME);
+        $uriUser         = Uri::buildUriFromString(self::MOCK_USER_PSWRD);
+        $uriPort         = Uri::buildUriFromString(self::MOCK_CUST_PORT);
+        $uriDefHttpPort  = Uri::buildUriFromString(self::MOCK_DEFAULT_PORT_HTTP);
+        $uriDefHttpsPort = Uri::buildUriFromString(self::MOCK_DEFAULT_PORT_HTTPS);
+        $uriOthHttpsPort = Uri::buildUriFromString(self::MOCK_CUSTOM_OTHER_PORT_HTTPS);
+        $uriCusHttpsPort = Uri::buildUriFromString(self::MOCK_CUSTOM_PORT_HTTPS, true, '800');
         $this->assertEquals('', $uriEmpty->getPort());
         $this->assertEquals('', $uriUser->getPort());
         $this->assertEquals('9090', $uriPort->getPort());
@@ -123,12 +171,12 @@ class UriTest extends \PHPUnit_Framework_TestCase
      */
     public function testPath()
     {
-        $uriComplex  = Uri::buildUriFromSting(self::MOCK_PATH_COMPLEX);
-        $uriCustom   = Uri::buildUriFromSting(self::MOCK_PATH_CUSTOM);
-        $uriEmpty    = Uri::buildUriFromSting(self::MOCK_PATH_EMPTY);
-        $uriMultiple = Uri::buildUriFromSting(self::MOCK_PATH_MULTIPLE);
-        $uriSpace    = Uri::buildUriFromSting(self::MOCK_PATH_SPACE);
-        $uriSlash    = Uri::buildUriFromSting(self::MOCK_PATH_SLASH);
+        $uriComplex  = Uri::buildUriFromString(self::MOCK_PATH_COMPLEX);
+        $uriCustom   = Uri::buildUriFromString(self::MOCK_PATH_CUSTOM);
+        $uriEmpty    = Uri::buildUriFromString(self::MOCK_PATH_EMPTY);
+        $uriMultiple = Uri::buildUriFromString(self::MOCK_PATH_MULTIPLE);
+        $uriSpace    = Uri::buildUriFromString(self::MOCK_PATH_SPACE);
+        $uriSlash    = Uri::buildUriFromString(self::MOCK_PATH_SLASH);
         $this->assertEquals('/hello-world/p8p', $uriComplex->getPath());
         $this->assertEquals('/hello', $uriCustom->getPath());
         $this->assertEquals('/', $uriEmpty->getPath());
@@ -145,10 +193,10 @@ class UriTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetAuthorityAndUserInfos()
     {
-        $uriWithoutPort                = Uri::buildUriFromSting(self::MOCK_USER_PSWRD);
-        $uriWithPort                   = Uri::buildUriFromSting(self::MOCK_CUST_PORT);
-        $uriWithoutUserInfoWithoutPort = Uri::buildUriFromSting(self::MOCK_HTTPS_REQUEST);
-        $uriWithoutUserInfo            = Uri::buildUriFromSting(self::MOCK_CUSTOM_OTHER_PORT_HTTPS);
+        $uriWithoutPort                = Uri::buildUriFromString(self::MOCK_USER_PSWRD);
+        $uriWithPort                   = Uri::buildUriFromString(self::MOCK_CUST_PORT);
+        $uriWithoutUserInfoWithoutPort = Uri::buildUriFromString(self::MOCK_HTTPS_REQUEST);
+        $uriWithoutUserInfo            = Uri::buildUriFromString(self::MOCK_CUSTOM_OTHER_PORT_HTTPS);
         $this->assertEquals('username:password@example.com', $uriWithoutPort->getAuthority());
         $this->assertEquals('username:password@hostname:9090', $uriWithPort->getAuthority());
         $this->assertEquals('www.test.com', $uriWithoutUserInfoWithoutPort->getAuthority());
@@ -165,8 +213,8 @@ class UriTest extends \PHPUnit_Framework_TestCase
      */
     public function testHost()
     {
-        $uriCustom = Uri::buildUriFromSting(self::MOCK_CUST_PORT);
-        $uriBasic  = Uri::buildUriFromSting(self::MOCK_BASIC_URI_REQUEST);
+        $uriCustom = Uri::buildUriFromString(self::MOCK_CUST_PORT);
+        $uriBasic  = Uri::buildUriFromString(self::MOCK_BASIC_URI_REQUEST);
         $this->assertEquals('hostname', $uriCustom->getHost());
         $this->assertEquals('www.test.com', $uriBasic->getHost());
         $this->assertEquals('localhost', $uriBasic->withHost('localhost')->getHost());
@@ -179,11 +227,142 @@ class UriTest extends \PHPUnit_Framework_TestCase
      */
     public function testQuery()
     {
-        $uriSpaces = Uri::buildUriFromSting(self::MOCK_PATH_SPACE_ARGS);
-        $uriBasic  = Uri::buildUriFromSting(self::MOCK_BASIC_URI_REQUEST);
+        $uriSpaces = Uri::buildUriFromString(self::MOCK_PATH_SPACE_ARGS);
+        $uriBasic  = Uri::buildUriFromString(self::MOCK_BASIC_URI_REQUEST);
         $this->assertEquals('var1=hello%20this%20is%20space&var2=world', $uriSpaces->getQuery());
         $this->assertEquals('arg1=hello&arg2=world', $uriBasic->getQuery());
         $this->assertEquals('arg5=helloworld', $uriBasic->withQuery('arg5=helloworld')->getQuery());
         $this->assertEquals('arg1=hello&arg2=world', $uriBasic->getQuery());
     }
+
+    /**
+     * @Covers Uri::buildUriFromServerRequest
+     */
+    public function testBuildUriFromServerRequest()
+    {
+        $uri = Uri::buildUriFromServerRequest($this->MOCK_SERVER);
+        $this->assertEquals('http', $uri->getScheme());
+        $this->assertEquals('hello=world', $uri->getQuery());
+        $this->assertEquals('/test/hello/world.php', $uri->getPath());
+    }
+
+    /**
+     * @expectedException \RuntimeException
+     * @expectedExceptionMessage Error, $_SERVER is null or empty
+     */
+    public function testBuildUriFromServerRequestNullException()
+    {
+        $uri = Uri::buildUriFromServerRequest([]);
+    }
+
+    /**
+     * @Covers Uri::buildUriFromArray
+     */
+    public function testBuildUriFromArray()
+    {
+        $uriHttp  = Uri::buildUriFromArray($this->MOCK_URI_ARRAY_HTTP);
+        $uriHttps = Uri::buildUriFromArray($this->MOCK_URI_ARRAY_HTTPS);
+        $this->assertEquals('http', $uriHttp->getScheme());
+        $this->assertEquals('hello=world&test=123', $uriHttp->getQuery());
+        $this->assertEquals('', $uriHttp->getPort());
+        $this->assertEquals('https', $uriHttps->getScheme());
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage Error, provided URI arguments array is empty
+     */
+    public function testBuildUriFromArrayException()
+    {
+        $uri = Uri::buildUriFromArray([]);
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage Error, provided URI string is null or empty
+     */
+    public function testbuildUriFromStringExceptionNullString()
+    {
+        $uri = Uri::buildUriFromString('');
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage Error, provided URI is not properly formatted / cannot be parsed
+     */
+    public function testbuildUriFromStringExceptionInvalidUriString()
+    {
+        $uri = Uri::buildUriFromString('//hellouser:@/world');
+    }
+
+    /**
+     * @Covers Uri::unparseUri
+     */
+    public function testUnparseUri()
+    {
+        $this->assertEquals(self::MOCK_PATH_COMPLEX, Uri::unparseUri(parse_url(self::MOCK_PATH_COMPLEX)));
+        $this->assertEquals(self::MOCK_PATH_CUSTOM, Uri::unparseUri(parse_url(self::MOCK_PATH_CUSTOM)));
+        $this->assertEquals(self::MOCK_PATH_EMPTY, Uri::unparseUri(parse_url(self::MOCK_PATH_EMPTY)));
+        $this->assertEquals(self::MOCK_PATH_MULTIPLE, Uri::unparseUri(parse_url(self::MOCK_PATH_MULTIPLE)));
+        $this->assertEquals(self::MOCK_PATH_SPACE, Uri::unparseUri(parse_url(self::MOCK_PATH_SPACE)));
+        $this->assertEquals(self::MOCK_PATH_SLASH, Uri::unparseUri(parse_url(self::MOCK_PATH_SLASH)));
+    }
+
+    /**
+     * @Covers Uri::httpBuildQuery
+     */
+    public function testHttpBuildQuery()
+    {
+        $aQuery       = http_build_query(['hello' => 'world']);
+        $aQueryActual = Uri::httpBuildQuery(['hello' => 'world']);
+        $this->assertEquals($aQuery, $aQueryActual);
+    }
+
+    /**
+     * @Covers Uri::getFragment
+     * @Covers Uri::withFragment
+     */
+    public function testFragment()
+    {
+        $uriBasic = Uri::buildUriFromString(self::MOCK_BASIC_URI_REQUEST);
+        $uriHttp  = Uri::buildUriFromArray($this->MOCK_URI_ARRAY_HTTP);
+        $this->assertEquals('fragment', $uriBasic->getFragment());
+        $this->assertEquals('', $uriHttp->getFragment());
+        $this->assertEquals('hello', $uriHttp->withFragment('hello')->getFragment());
+        $this->assertEquals('', $uriHttp->getFragment());
+    }
+
+    /**
+     * @Covers Uri::withUserInfo
+     * @Covers Uri::getAuthority
+     */
+    public function testWithUserInfo()
+    {
+        $uriAuthPort        = Uri::buildUriFromString(self::MOCK_CUST_PORT);
+        $uriAuthWithoutPort = Uri::buildUriFromString(self::MOCK_USER_PSWRD);
+        $uriBasic           = Uri::buildUriFromString(self::MOCK_BASIC_URI_REQUEST);
+        $this->assertEquals('username:password@hostname:9090', $uriAuthPort->getAuthority());
+        $this->assertEquals('username:password@example.com', $uriAuthWithoutPort->getAuthority());
+        $this->assertEquals('www.test.com', $uriBasic->getAuthority());
+        $this->assertEquals('john:azerty123@hostname:9090',
+            $uriAuthPort->withUserInfo('john', 'azerty123')->getAuthority());
+        $this->assertEquals('example.com', $uriAuthWithoutPort->withUserInfo('')->getAuthority());
+        $this->assertEquals('paul:password123@www.test.com',
+            $uriBasic->withUserInfo('paul', 'password123')->getAuthority());
+        $this->assertEquals('www.test.com', $uriBasic->getAuthority());
+    }
+
+    /**
+     * @Covers Uri::__toString()
+     */
+    public function testToString()
+    {
+        $uriAuthPort        = Uri::buildUriFromString(self::MOCK_CUST_PORT);
+        $uriAuthWithoutPort = Uri::buildUriFromString(self::MOCK_USER_PSWRD);
+        $uriBasic           = Uri::buildUriFromString(self::MOCK_BASIC_URI_REQUEST);
+        $this->assertEquals(strtolower(self::MOCK_CUST_PORT), (string)$uriAuthPort);
+        $this->assertEquals(strtolower(self::MOCK_USER_PSWRD), (string)$uriAuthWithoutPort);
+        $this->assertEquals(strtolower(self::MOCK_BASIC_URI_REQUEST), (string)$uriBasic);
+    }
+
 }

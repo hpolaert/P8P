@@ -11,7 +11,8 @@
   ],
   "require-dev": {
     "phpunit/phpunit": "5.3.*",
-    "psr/http-message": "1.0.*"
+    "psr/http-message": "1.0.*",
+    "codeclimate/php-test-reporter": "0.3.x-dev"
   },
   "autoload": {
     "classmap": [
@@ -20,6 +21,7 @@
     ]
   },
   "require": {
-    "interop/container": "dev-master"
+    "interop/container": "dev-master",
+    "codeclimate/php-test-reporter": "0.3.x-dev"
   }
 }

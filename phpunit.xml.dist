@@ -4,9 +4,21 @@
          convertNoticesToExceptions="true"
          convertWarningsToExceptions="true"
          stopOnFailure="true">
+    <filter>
+        <whitelist>
+            <directory suffix=".php">src/</directory>
+        </whitelist>
+    </filter>
     <testsuites>
         <testsuite name="Test Suite">
             <directory>tests</directory>
         </testsuite>
     </testsuites>
+    <logging>
+        <log type="coverage-html" target="build/logs/coverage" charset="UTF-8"
+             yui="true" highlight="true"
+             lowUpperBound="50" highLowerBound="80"/>
+        <log type="coverage-clover" target="build/logs/clover.xml"/>
+        <log type="testdox-html" target="build/logs/tests.html"/>
+    </logging>
 </phpunit>

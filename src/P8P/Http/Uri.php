@@ -79,16 +79,20 @@ class Uri implements UriInterface
      *
      * Fetch and assign each component of server request URI
      *
+     * @param array|null  $mock             Use a mock instead of the $_SERVER data
      * @param array|false $useForwardedHost In case the URI goes through a proxy (used to forward the original host)
      * @param string|null $customHttpsPort  In case a custom HTTPS has been defined
      *
      * @throws \RuntimeException
      * @return self
      */
-    public static function buildUriFromServerRequest(bool $useForwardedHost = false, string $customHttpsPort = null)
-    {
-        // Current URL
-        $req = $_SERVER;
+    public static function buildUriFromServerRequest(
+        array $mock = null,
+        bool $useForwardedHost = false,
+        string $customHttpsPort = null
+    ) {
+        // Create request array from mock or $_SERVER var
+        $req = $mock ?? $_SERVER;
         if (empty($req)) {
             throw new \RuntimeException('Error, $_SERVER is null or empty');
         }
@@ -103,8 +107,8 @@ class Uri implements UriInterface
         $isHttpsDefaultPort = !is_null($customHttpsPort) ? ($https && $port === $customHttpsPort) : $isHttpsDefaultPort;
         $port               = ($isHttpDefaultPort || $isHttpsDefaultPort) ? '' : $port;
         // Fetch user
-        $user = $req['PHP_AUTH_USER'];
-        $pass = $req['PHP_AUTH_PW'];
+        $user = $req['PHP_AUTH_USER'] ?? '';
+        $pass = $req['PHP_AUTH_PW'] ?? '';
         // Fetch host
         $forwardedHost = $useForwardedHost && isset($req['HTTP_X_FORWARDED_HOST']);
         $basicHost     = $req['HTTP_HOST'] ?? null;
@@ -116,7 +120,7 @@ class Uri implements UriInterface
         $path = parse_url('http://url.com' . $req['REQUEST_URI'], PHP_URL_PATH);
         // Fragment cannot be fetched in php
         $fragment = '';
-        return new static(compact($scheme, $user, $pass, $port, $path, $host, $query, $fragment), $https,
+        return new static(compact('scheme', 'user', 'pass', 'port', 'path', 'host', 'query', 'fragment'), $https,
             $customHttpsPort);
     }
 
@@ -154,7 +158,7 @@ class Uri implements UriInterface
      * @throws \InvalidArgumentException
      * @return self
      */
-    public static function buildUriFromSting(
+    public static function buildUriFromString(
         string $uri,
         bool $useForwardedHost = false,
         string $customHttpsPort = null
@@ -219,15 +223,15 @@ class Uri implements UriInterface
     public static function unparseUri(Array $uriArguments) : string
     {
         // Extract each URI parameters
-        $uriStringOutput = isset($uriArguments['scheme']) ? $uriArguments['scheme'] . '://' : '';
-        $uriStringOutput .= $uriArguments['host'] ?? '';
-        $uriStringOutput .= isset($uriArguments['port']) ? ':' . $uriArguments['port'] : '';
-        $uriStringOutput .= $uriArguments['user'] ?? '';
-        $uriStringOutput .= isset($uriArguments['pass']) ? ':' . $uriArguments['pass'] : '';
-        $uriStringOutput .= ($uriArguments['user'] || $uriArguments['pass']) ? '@' : '';
-        $uriStringOutput .= isset($uriArguments['path']) ? $uriArguments['path'] : '';
-        $uriStringOutput .= isset($uriArguments['query']) ? '?' . $uriArguments['query'] : '';
-        $uriStringOutput .= isset($uriArguments['fragment']) ? '#' . $uriArguments['fragment'] : '';
+        $uriStringOutput = !empty($uriArguments['scheme']) ? $uriArguments['scheme'] . '://' : '';
+        $uriStringOutput .= !empty($uriArguments['user']) ? $uriArguments['user'] : '';
+        $uriStringOutput .= !empty($uriArguments['pass']) ? ':' . $uriArguments['pass'] : '';
+        $uriStringOutput .= (!empty($uriArguments['user']) || !empty($uriArguments['pass'])) ? '@' : '';
+        $uriStringOutput .= !empty($uriArguments['host']) ? $uriArguments['host'] : '';
+        $uriStringOutput .= !empty($uriArguments['port']) ? ':' . $uriArguments['port'] : '';
+        $uriStringOutput .= !empty($uriArguments['path']) ? $uriArguments['path'] : '';
+        $uriStringOutput .= !empty($uriArguments['query']) ? '?' . $uriArguments['query'] : '';
+        $uriStringOutput .= !empty($uriArguments['fragment']) ? '#' . $uriArguments['fragment'] : '';
         return $uriStringOutput;
     }
 
@@ -265,7 +269,11 @@ class Uri implements UriInterface
      */
     protected function parseScheme(string $scheme) : string
     {
-        $scheme = strtolower(str_replace('://', '', $scheme));
+        // Clean the scheme
+        $scheme = strtolower(str_replace(':', '', $scheme));
+        if (strpos($scheme, '/') <> 0) {
+            $scheme = substr($scheme, 0, strpos($scheme, '/'));
+        }
         if (!in_array($scheme, ['http', 'https', ''])) {
             throw new \InvalidArgumentException('Error, scheme must be either http, https or an empty string');
         }
