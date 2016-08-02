@@ -36,37 +36,42 @@ use Psr\Http\Message\UriInterface;
 class Uri implements UriInterface
 {
     /**
-     * @var URI scheme
+     * @var string URI scheme
      */
     protected $uriScheme;
     /**
-     * @var URI user
+     * @var string URI user
      */
     protected $uriUser;
     /**
-     * @var URI password
+     * @var string URI password
      */
     protected $uriPassword;
     /**
-     * @var URI host
+     * @var string URI host
      */
     protected $uriHost;
     /**
-     * @var URI port
+     * @var string URI port
      */
     protected $uriPort;
     /**
-     * @var URI path
+     * @var string URI path
      */
     protected $uriPath;
     /**
-     * @var URI query
+     * @var string URI query
      */
     protected $uriQuery;
     /**
-     * @var URI fragment
+     * @var string URI fragment
      */
     protected $uriFragment;
+    /**
+     * @var array Allowed URI schemes
+     */
+    protected $allowedUriSchemes = ['http', 'https', ''];
+    
 
     /**
      * ----------------------------------------------
@@ -265,6 +270,7 @@ class Uri implements UriInterface
      *
      * @param string $scheme Scheme to be analysed and filtered
      *
+     * @throws \InvalidArgumentException
      * @return string Filtered scheme
      */
     protected function parseScheme(string $scheme) : string
@@ -274,7 +280,7 @@ class Uri implements UriInterface
         if (strpos($scheme, '/') <> 0) {
             $scheme = substr($scheme, 0, strpos($scheme, '/'));
         }
-        if (!in_array($scheme, ['http', 'https', ''])) {
+        if (!in_array($scheme, $this->allowedUriSchemes)) {
             throw new \InvalidArgumentException('Error, scheme must be either http, https or an empty string');
         }
         return $scheme;
@@ -289,6 +295,7 @@ class Uri implements UriInterface
      * @param array|false $useForwardedHost In case the URI goes through a proxy (used to forward the original host)
      * @param string|null $customHttpsPort  In case a custom HTTPS has been defined
      *
+     * @throws \InvalidArgumentException
      * @return string Filtered port
      */
     protected function parsePort(

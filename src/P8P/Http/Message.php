@@ -27,6 +27,13 @@ use Psr\Http\Message\MessageInterface;
  */
 class Message implements MessageInterface
 {
+	
+	// Set protocol version to the current norm
+	protected $currentHttpProtocolVersion = '1.1'; 	
+	
+	// allowed protocolversions
+	protected $allowedProtocolVersions = ['1.0', '1.1', '2.0'];
+	
     /**
      * Retrieves the HTTP protocol version as a string.
      *
@@ -34,7 +41,9 @@ class Message implements MessageInterface
      *
      * @return string HTTP protocol version.
      */
-    public function getProtocolVersion();
+    public function getProtocolVersion() : string {
+		return $this->currentHttpProtocolVersion;
+    }
 
     /**
      * Return an instance with the specified HTTP protocol version.
@@ -50,7 +59,14 @@ class Message implements MessageInterface
      *
      * @return self
      */
-    public function withProtocolVersion($version);
+    public function withProtocolVersion(string $version){
+    	if (!in_array($version, $this->allowedProtocolVersions)) {
+    		throw new \InvalidArgumentException('Error, invalid HTTP protocol version provided');
+    	}	
+    	$clone            = clone $this;
+    	$clone->currentHttpProtocolVersion = $version;
+    	return $clone;
+    }
 
     /**
      * Retrieves all message header values.
@@ -204,4 +220,12 @@ class Message implements MessageInterface
      * @throws \InvalidArgumentException When the body is not valid.
      */
     public function withBody(StreamInterface $body);
+    
+    
+    
+    // UTILITY METHODS 
+    protected function validateProtocolVersion(){
+    	
+    }
+    
 }
