@@ -6,14 +6,14 @@
  * @copyright Copyright (c) 2016 Hugues Polaert
  * @license   https://github.com/hpolaert/p8p/LICENCE.md (MIT)
  */
-
-namespace P8P\Exception;
-
-use Exception;
+namespace P8PTest\Container\Fixtures;
 
 /**
- * Base interface representing a generic exception in a container.
+ * Fixture : invokable
  */
-class NotFoundException extends Exception implements \Interop\Container\Exception\NotFoundException
+class Invokable
 {
+    public function __invoke(){
+        return 'Hello World!';
+    }
 }

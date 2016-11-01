@@ -6,11 +6,11 @@
  * @copyright Copyright (c) 2016 Hugues Polaert
  * @license   https://github.com/hpolaert/p8p/LICENCE.md (MIT)
  */
-namespace P8P\Core;
+namespace P8P\Container;
 
 use Interop\Container\ContainerInterface;
-use P8P\Exception\ContainerException;
-use P8P\Exception\NotFoundException;
+use P8P\Container\Exception\ContainerException;
+use P8P\Container\Exception\NotFoundException;
 
 /**
  * Container

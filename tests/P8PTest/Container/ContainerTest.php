@@ -6,9 +6,9 @@
  * @copyright Copyright (c) 2016 Hugues Polaert
  * @license   https://github.com/hpolaert/p8p/LICENCE.md (MIT)
  */
-namespace P8PTest\Core;
+namespace P8PTest\Container;
 
-use P8P\Core\Container;
+use P8P\Container\Container;
 
 /**
  * Container Test Cases
@@ -28,6 +28,7 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
     public function __construct()
     {
         $this->testContainer = new Container();
+        $this->assertInstanceOf('P8P\Container\Container', $this->testContainer);
     }
 
     /**
@@ -58,7 +59,7 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
     {
         $this->testContainer['anInvokable'] = new Fixtures\Invokable();
         $this->assertEquals('Hello World!', $this->testContainer['anInvokable']);
-        $this->assertNotInstanceOf('P8PTest\Core\Fixtures\Invokable', $this->testContainer['anInvokable']);
+        $this->assertNotInstanceOf('P8PTest\Container\Fixtures\Invokable', $this->testContainer['anInvokable']);
     }
 
     /**
@@ -68,7 +69,7 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
     public function testShouldReturnNotInvokable()
     {
         $this->testContainer['aNotInvokable'] = new Fixtures\NotInvokable();
-        $this->assertInstanceOf('P8PTest\Core\Fixtures\NotInvokable', $this->testContainer['aNotInvokable']);
+        $this->assertInstanceOf('P8PTest\Container\Fixtures\NotInvokable', $this->testContainer['aNotInvokable']);
     }
 
     /**
@@ -83,10 +84,10 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
                 return new Fixtures\Library();
             }
         );
-        $instanceOne = $this->testContainer['library'];
-        $instanceTwo = $this->testContainer['library'];
-        $this->assertInstanceOf('P8PTest\Core\Fixtures\Library', $instanceOne);
-        $this->assertInstanceOf('P8PTest\Core\Fixtures\Library', $instanceTwo);
+        $instanceOne                    = $this->testContainer['library'];
+        $instanceTwo                    = $this->testContainer['library'];
+        $this->assertInstanceOf('P8PTest\Container\Fixtures\Library', $instanceOne);
+        $this->assertInstanceOf('P8PTest\Container\Fixtures\Library', $instanceTwo);
         $this->assertNotSame($instanceOne, $instanceTwo);
     }
 
@@ -99,15 +100,15 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         $this->testContainer['library'] = function () {
             return new Fixtures\Library();
         };
-        $instanceOne = $this->testContainer['library'];
-        $instanceTwo = $this->testContainer['library'];
-        $this->assertInstanceOf('P8PTest\Core\Fixtures\Library', $instanceOne);
-        $this->assertInstanceOf('P8PTest\Core\Fixtures\Library', $instanceTwo);
+        $instanceOne                    = $this->testContainer['library'];
+        $instanceTwo                    = $this->testContainer['library'];
+        $this->assertInstanceOf('P8PTest\Container\Fixtures\Library', $instanceOne);
+        $this->assertInstanceOf('P8PTest\Container\Fixtures\Library', $instanceTwo);
         $this->assertSame($instanceOne, $instanceTwo);
     }
 
     /**
-     * @expectedException \P8P\Exception\NotFoundException
+     * @expectedException \P8P\Container\Exception\NotFoundException
      * @expectedExceptionMessage Error, key "doesNotExist" is not registered
      */
     public function testNotFoundException()
@@ -116,12 +117,12 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException \P8P\Exception\ContainerException
+     * @expectedException \P8P\Container\Exception\ContainerException
      * @expectedExceptionMessage Error, "Hello" is not instantiable
      */
     public function testContainerException()
     {
-        $notInstantiable = 'Hello';
+        $notInstantiable                        = 'Hello';
         $this->testContainer['notInstantiable'] = $this->testContainer->forceNew($notInstantiable);
     }
 
@@ -131,8 +132,8 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
      */
     public function testUnsetKey()
     {
-        $this->testContainer['testVar'] = 'Hello world!';
-        $this->testContainer['testClosure'] = function() {
+        $this->testContainer['testVar']     = 'Hello world!';
+        $this->testContainer['testClosure'] = function () {
             return 'Hello world!';
         };
         $this->assertEquals('Hello world!', $this->testContainer['testVar']);

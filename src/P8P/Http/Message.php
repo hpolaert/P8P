@@ -27,13 +27,13 @@ use Psr\Http\Message\MessageInterface;
  */
 class Message implements MessageInterface
 {
-	
-	// Set protocol version to the current norm
-	protected $currentHttpProtocolVersion = '1.1'; 	
-	
-	// allowed protocolversions
-	protected $allowedProtocolVersions = ['1.0', '1.1', '2.0'];
-	
+
+    // Set protocol version to the current norm
+    protected $currentHttpProtocolVersion = '1.1';
+
+    // allowed protocolversions
+    protected $allowedProtocolVersions = ['1.0', '1.1', '2.0'];
+
     /**
      * Retrieves the HTTP protocol version as a string.
      *
@@ -41,8 +41,9 @@ class Message implements MessageInterface
      *
      * @return string HTTP protocol version.
      */
-    public function getProtocolVersion() : string {
-		return $this->currentHttpProtocolVersion;
+    public function getProtocolVersion() : string
+    {
+        return $this->currentHttpProtocolVersion;
     }
 
     /**
@@ -59,13 +60,14 @@ class Message implements MessageInterface
      *
      * @return self
      */
-    public function withProtocolVersion(string $version){
-    	if (!in_array($version, $this->allowedProtocolVersions)) {
-    		throw new \InvalidArgumentException('Error, invalid HTTP protocol version provided');
-    	}	
-    	$clone            = clone $this;
-    	$clone->currentHttpProtocolVersion = $version;
-    	return $clone;
+    public function withProtocolVersion(string $version)
+    {
+        if (!in_array($version, $this->allowedProtocolVersions)) {
+            throw new \InvalidArgumentException('Error, invalid HTTP protocol version provided');
+        }
+        $clone                             = clone $this;
+        $clone->currentHttpProtocolVersion = $version;
+        return $clone;
     }
 
     /**
@@ -93,7 +95,11 @@ class Message implements MessageInterface
      *     Each key MUST be a header name, and each value MUST be an array of
      *     strings for that header.
      */
-    public function getHeaders();
+    public function getHeaders() : array
+    {
+
+    }
+
 
     /**
      * Checks if a header exists by the given case-insensitive name.
@@ -220,12 +226,12 @@ class Message implements MessageInterface
      * @throws \InvalidArgumentException When the body is not valid.
      */
     public function withBody(StreamInterface $body);
-    
-    
-    
-    // UTILITY METHODS 
-    protected function validateProtocolVersion(){
-    	
+
+
+    // UTILITY METHODS
+    protected function validateProtocolVersion()
+    {
+
     }
-    
+
 }

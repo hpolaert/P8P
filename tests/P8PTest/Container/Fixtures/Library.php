@@ -6,14 +6,12 @@
  * @copyright Copyright (c) 2016 Hugues Polaert
  * @license   https://github.com/hpolaert/p8p/LICENCE.md (MIT)
  */
-
-namespace P8P\Exception;
-
-use Exception;
+namespace P8PTest\Container\Fixtures;
 
 /**
- * Base interface representing a generic exception in a container.
+ * Fixture : library
  */
-class ContainerException extends Exception implements \Interop\Container\Exception\ContainerException
+class Library
 {
+    private $identifier;
 }

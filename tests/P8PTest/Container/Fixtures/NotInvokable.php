@@ -6,14 +6,14 @@
  * @copyright Copyright (c) 2016 Hugues Polaert
  * @license   https://github.com/hpolaert/p8p/LICENCE.md (MIT)
  */
-namespace P8PTest\Core\Fixtures;
+namespace P8PTest\Container\Fixtures;
 
 /**
- * Fixture : invokable
+ * Fixture : NotInvokable
  */
-class Invokable
+class NotInvokable
 {
-    public function __invoke(){
+    public function sayHello(){
         return 'Hello World!';
     }
 }
