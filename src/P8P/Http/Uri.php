@@ -746,6 +746,7 @@ class Uri implements UriInterface
         $uriArray['path']     = $this->urlEncode($this->uriPath);
         $uriArray['query']    = $this->urlEncode($this->uriQuery);
         $uriArray['fragment'] = $this->urlEncode($this->uriFragment);
+        // Generic builder
         return self::unparseUri($uriArray);
     }
 }
