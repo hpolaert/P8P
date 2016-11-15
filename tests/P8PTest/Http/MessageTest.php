@@ -24,15 +24,14 @@ class MessageTest extends \PHPUnit_Framework_TestCase
 	 */
 	public function testGivenHeaderIsIncludedIntoResponse()
 	{
-		$customHeaderName = 'foo';
-		$customHeaderValue = 'bar';
+		$customHeaderName = 'Location';
+		$customHeaderValue = 'foo';
 		ob_start();
 		header('Location: foo');
-		$headers_list = headers_list();
-		header_remove();
 		ob_clean();
 		$expectedHeader = $customHeaderName . ': ' . $customHeaderValue;
 		$headers = xdebug_get_headers();
-		$this->assertContains($expectedHeader, $headers);
+		print_r($headers);
+		$this->assertContains($expectedHeader, $headers[0]);
 	}
 }
