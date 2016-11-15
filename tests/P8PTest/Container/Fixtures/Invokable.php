@@ -16,4 +16,8 @@ class Invokable
     public function __invoke(){
         return 'Hello World!';
     }
+    
+    public function sayHello(){
+    	return 'Hello World!';
+    }
 }

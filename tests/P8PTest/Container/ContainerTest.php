@@ -143,4 +143,36 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse(isset($this->testContainer['testVar']));
         $this->assertFalse(isset($this->testContainer['testClosure']));
     }
+    
+    /**
+     * @Covers Container::has
+     */
+    public function testHasAlias()
+    {
+    	$this->testContainer['testVar'] = 'Index is set';
+    	$this->assertTrue($this->testContainer->has('testVar'));
+    	$this->assertFalse($this->testContainer->has('thisVarDoesNotExist'));
+    }
+    
+    /**
+     * @Covers Container::get
+     */
+    public function testGetAlias()
+    {
+    	$this->testContainer['testEqual'] = 'Hello world!';
+    	$this->testContainer['testNotEqual'] = 'Alpha';
+    	$this->assertEquals('Hello world!', $this->testContainer->get('testEqual'));
+    	$this->assertNotEquals('Beta', $this->testContainer->get('testNotEqual'));
+    }
+    
+    /**
+     * @Covers Container::output
+     */
+    public function testRawOutput()
+    {
+    	
+    	$this->testContainer['anInvokable'] = new Fixtures\Invokable();
+    	$this->assertEquals('Hello World!', $this->testContainer->output('anInvokable')->sayHello());
+    	$this->assertEquals('Hello World!', $this->testContainer['anInvokable']);
+    }
 }
