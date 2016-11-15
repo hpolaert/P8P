@@ -26,6 +26,7 @@ class MessageTest extends \PHPUnit_Framework_TestCase
 	{
 		$customHeaderName = 'Location';
 		$customHeaderValue = 'foo';
+		// Write custom header 
 		ob_start();
 		header('Location: foo');
 		ob_clean();
