@@ -10,6 +10,7 @@
 namespace P8P\Http;
 
 use Psr\Http\Message\MessageInterface;
+use Psr\Http\Message\StreamInterface;
 
 /**
  * P8P - Basic implementation of PSR-7 Message interface
@@ -28,14 +29,26 @@ use Psr\Http\Message\MessageInterface;
 class Message implements MessageInterface
 {
 
-    // Set protocol version to the current norm
+	/**
+	 * @var string	Store current protocol version
+	 */
     protected $currentHttpProtocolVersion = '1.1';
 
-    // allowed protocolversions
+    /**
+     * @var array	Allowed protocol versions
+     */
     protected $allowedProtocolVersions = ['1.0', '1.1', '2.0'];
 
-    // headers array
-    protected $headers;
+    /**
+     * @var array	Headers Array
+     * TODO Header Object Interface
+     */
+    protected $headers = [];
+    
+    /**
+     * @var \Psr\Http\Message\StreamInterface	Body object
+     */
+    protected $body;
 
     /**
      * Retrieves the HTTP protocol version as a string.
@@ -65,6 +78,7 @@ class Message implements MessageInterface
      */
     public function withProtocolVersion(string $version)
     {
+    	// Check for allowed HTTP protocol
         if (!in_array($version, $this->allowedProtocolVersions)) {
             throw new \InvalidArgumentException('Error, invalid HTTP protocol version provided');
         }
@@ -101,7 +115,17 @@ class Message implements MessageInterface
     public function getHeaders() : array
     {
         // Iterate and populate headers array
-
+    	$headers = [];
+    	foreach($this->headers as $key => $value) {
+    		// Transform http keys 
+    		if (strtolower(substr($key, 0, 5)) === 'http_') {
+    			$header = str_replace(' ', '-', ucwords(str_replace('_', ' ', strtolower(substr($key, 5)))));
+    		}     
+    		// Explode values to return headers as string[][] 
+    		$value = array_map('trim', explode(',', $value));
+    		$headers[$header] = $value;
+    	}
+    	return $headers;
     }
 
 
@@ -136,7 +160,8 @@ class Message implements MessageInterface
      */
     public function getHeader($name)
     {
-        return $this->hasHeader($name) === true ? $this->headers[$this->normalizeKey($name)]['value'] : [];
+        return $this->hasHeader($name) === true 
+        	? $this->headers[$this->normalizeKey($name)]['value'] : [];
     }
 
     /**
@@ -246,7 +271,9 @@ class Message implements MessageInterface
      *
      * @return StreamInterface Returns the body as a stream.
      */
-    public function getBody();
+    public function getBody(){
+    	return $this->body;
+    }
 
     /**
      * Return an instance with the specified message body.
@@ -262,7 +289,11 @@ class Message implements MessageInterface
      * @return self
      * @throws \InvalidArgumentException When the body is not valid.
      */
-    public function withBody(StreamInterface $body);
+    public function withBody(StreamInterface $body){
+    	$clone     = clone $this;
+    	$clone->body = $body;
+    	return $clone;
+    }
 
 
     /**
