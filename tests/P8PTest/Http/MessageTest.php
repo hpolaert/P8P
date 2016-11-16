@@ -29,10 +29,9 @@ class MessageTest extends \PHPUnit_Framework_TestCase
 		// Write custom header 
 		ob_start();
 		header('Location: foo');
-		ob_clean();
+		ob_end_clean();
 		$expectedHeader = $customHeaderName . ': ' . $customHeaderValue;
 		$headers = xdebug_get_headers();
-		print_r($headers);
 		$this->assertContains($expectedHeader, $headers[0]);
 	}
 }

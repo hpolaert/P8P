@@ -34,6 +34,9 @@ class Message implements MessageInterface
     // allowed protocolversions
     protected $allowedProtocolVersions = ['1.0', '1.1', '2.0'];
 
+    // headers array
+    protected $headers;
+
     /**
      * Retrieves the HTTP protocol version as a string.
      *
@@ -97,7 +100,8 @@ class Message implements MessageInterface
      */
     public function getHeaders() : array
     {
-		
+        // Iterate and populate headers array
+
     }
 
 
@@ -110,7 +114,10 @@ class Message implements MessageInterface
      *     name using a case-insensitive string comparison. Returns false if
      *     no matching header name is found in the message.
      */
-    public function hasHeader($name);
+    public function hasHeader($name)
+    {
+        return array_key_exists($this->normalizeKey($name), $this->headers);
+    }
 
     /**
      * Retrieves a message header value by the given case-insensitive name.
@@ -127,7 +134,10 @@ class Message implements MessageInterface
      *    header. If the header does not appear in the message, this method MUST
      *    return an empty array.
      */
-    public function getHeader($name);
+    public function getHeader($name)
+    {
+        return $this->hasHeader($name) === true ? $this->headers[$this->normalizeKey($name)]['value'] : [];
+    }
 
     /**
      * Retrieves a comma-separated string of the values for a single header.
@@ -149,7 +159,12 @@ class Message implements MessageInterface
      *    concatenated together using a comma. If the header does not appear in
      *    the message, this method MUST return an empty string.
      */
-    public function getHeaderLine($name);
+    public function getHeaderLine($name)
+    {
+        // If header exists, implode the values, else return an
+        return $this->hasHeader($name) === true ? implode(',',
+            $this->headers[$this->normalizeKey($name)]['value']) : '';
+    }
 
     /**
      * Return an instance with the provided value replacing the specified header.
@@ -167,7 +182,18 @@ class Message implements MessageInterface
      * @return self
      * @throws \InvalidArgumentException for invalid header names or values.
      */
-    public function withHeader($name, $value);
+    public function withHeader($name, $value)
+    {
+        $clone = clone $this;
+        // Transform value into an array if necessary
+        $value = is_array($value) ? $value : [$value];
+        // Assign new value
+        $clone->headers[$this->normalizeKey($name)] = [
+            'value'       => $value,
+            'originalKey' => $name
+        ];
+        return $clone;
+    }
 
     /**
      * Return an instance with the specified header appended with the given value.
@@ -187,7 +213,18 @@ class Message implements MessageInterface
      * @throws \InvalidArgumentException for invalid header names.
      * @throws \InvalidArgumentException for invalid header values.
      */
-    public function withAddedHeader($name, $value);
+    public function withAddedHeader($name, $value)
+    {
+        $clone     = clone $this;
+        $oldValues = $this->getHeader($name);
+        $newValues = is_array($value) ? $value : [$value];
+
+        $clone->headers[$this->normalizeKey($name)] = [
+            'value'       => array_merge($oldValues, array_values($newValues)),
+            'originalKey' => $name
+        ];
+        return $clone;
+    }
 
     /**
      * Return an instance without the specified header.
@@ -228,10 +265,22 @@ class Message implements MessageInterface
     public function withBody(StreamInterface $body);
 
 
-    // UTILITY METHODS
-    protected function validateProtocolVersion()
+    /**
+     * Normalize header name
+     *
+     * Enable case-insensitive header name
+     *
+     * @param  string $key The case-insensitive header name
+     *
+     * @return string Normalized header name
+     */
+    protected function normalizeKey($key)
     {
-
+        $key = strtr(strtolower($key), '_', '-');
+        if (strpos($key, 'http-') === 0) {
+            $key = substr($key, 5);
+        }
+        return $key;
     }
 
 }
