@@ -264,7 +264,16 @@ class Message implements MessageInterface
      *
      * @return self
      */
-    public function withoutHeader($name);
+    public function withoutHeader($name){
+    	// Avoid unnecessary immutability if the header does not exist
+    	if($this->hasHeader($name)){
+    		$clone = clone $this;
+    		unset($clone->headers[$this->normalizeKey($key)]);
+    		return $clone;
+    				
+    	}
+    	return $this;
+    }
 
     /**
      * Gets the body of the message.
