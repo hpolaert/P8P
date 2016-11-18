@@ -22,11 +22,54 @@ use Psr\Http\Message\StreamInterface;
  */
 class Stream implements StreamInterface
 {
-    
+    	
 	/**
 	 * @var resource	Stream resource
 	 */
 	protected $stream;
+	
+	/**
+	 * @var boolean		Is stream seekable
+	 */
+	protected $isSeekable;
+	
+	/**
+	 * @var boolean		Is stream readable
+	 */
+	protected $isReadable;
+	
+	/**
+	 * @var boolean		Is stream writable
+	 */
+	protected $isWritable;
+	
+	/**
+	 * @var null|int	Stream size
+	 */
+	protected $streamSize;
+	
+	/**
+	 * @var array		Stream metadata 
+	 */
+	protected $metadata = [];
+	
+	/** 
+	 * @var array Hash of readable and writable stream types 
+	 */
+	protected $readWriteHash = [
+			'read' => [
+					'r' => true, 'w+' => true, 'r+' => true, 'x+' => true, 'c+' => true,
+					'rb' => true, 'w+b' => true, 'r+b' => true, 'x+b' => true,
+					'c+b' => true, 'rt' => true, 'w+t' => true, 'r+t' => true,
+					'x+t' => true, 'c+t' => true, 'a+' => true,
+			],
+			'write' => [
+					'w' => true, 'w+' => true, 'rw' => true, 'r+' => true, 'x+' => true,
+					'c+' => true, 'wb' => true, 'w+b' => true, 'r+b' => true,
+					'x+b' => true, 'c+b' => true, 'w+t' => true, 'r+t' => true,
+					'x+t' => true, 'c+t' => true, 'a' => true, 'a+' => true,
+			],
+	];
 	
     /**
      * Constructor
@@ -41,6 +84,7 @@ class Stream implements StreamInterface
     public function __construct($stream){
     	if($this->isValidResource($stream, __METHOD__)){
     		$this->stream = $stream;
+    		$this->setStreamReadAndWriteAttributes();
     	}
     }
     
@@ -68,11 +112,30 @@ class Stream implements StreamInterface
      */
     public function attachStream($newStream){
     	if($this->isValidResource($stream, __METHOD__)){
-    		if($this->isStreamAttached){
+    		if($this->isStreamAttached() === true){
     			$this->detach($stream);
     		}
     		$this->stream = $newStream;
+    		$this->setStreamReadAndWriteAttributes();
     	} 
+    }
+    
+    /**
+     * Set stream readable and writable attributes
+     *
+     * Check if the current stream is a valid resource
+     * [Not part of PSR7 Standard]
+     *
+     * @param resource $stream PHP Resource object
+     *
+     * @return boolean
+     */
+    public function setStreamReadAndWriteAttributes(){
+    	if($this->isStreamAttached() === true){
+    		$mode = $this->getMetadata('mode');
+    		$this->isReadable = isset($this->readWriteHash['read'][$mode]);
+    		$this->isWritable = isset($this->readWriteHash['write'][$mode]);
+    	}
     }
     
     /**
@@ -95,7 +158,7 @@ class Stream implements StreamInterface
     }
     
     /**
-     * P8P - Basic implementation of PSR-7 Stream interface
+     * Output stream as string
      *
      * Reads all data from the stream into a string, from the beginning to end.
      *
@@ -110,7 +173,17 @@ class Stream implements StreamInterface
      * @see http://php.net/manual/en/language.oop5.magic.php#object.tostring
      * @return string
      */
-    public function __toString();
+    public function __toString(){
+    	if (!$this->isStreamAttached()) {
+    		return '';
+    	}
+    	try {
+    		$this->rewind();
+    		return $this->getContents();
+    	} catch (RuntimeException $e) {
+    		return '';
+    	}
+    }
 
     /**
      * Closes the stream and any underlying resources.
@@ -133,7 +206,16 @@ class Stream implements StreamInterface
      * @return resource|null Underlying PHP stream, if any
      */
     public function detach(){
-    	
+    	if($this->isStreamAttached()){
+	    	$oldStream = $this->stream;
+	    	$this->stream = null;
+	    	$this->isReadable = null;
+	    	$this->isSeekable = null;
+	    	$this->isWritable = null;
+	    	$this->streamSize = null;
+	    	return $oldStream;
+    	}
+	    return null;
     }
 
     /**
@@ -141,7 +223,13 @@ class Stream implements StreamInterface
      *
      * @return int|null Returns the size in bytes if known, or null if unknown.
      */
-    public function getSize();
+    public function getSize(){
+    	if (!$this->streamSize && $this->isStreamAttached() === true) {
+    		$stats = fstat($this->stream);
+    		$this->streamSize = isset($stats['size']) ? $stats['size'] : null;
+    	}
+    	return $this->streamSize;
+    }
 
     /**
      * Returns the current position of the file read/write pointer
@@ -149,7 +237,12 @@ class Stream implements StreamInterface
      * @return int Position of the file pointer
      * @throws \RuntimeException on error.
      */
-    public function tell();
+    public function tell(){
+    	if (!$this->isStreamAttached() || ($position = ftell($this->stream)) === false) {
+    		throw new RuntimeException('Could not get the position of the pointer in stream');
+    	}
+    	return $position;
+    }
 
     /**
      * Returns true if the stream is at the end of the stream.
@@ -165,7 +258,13 @@ class Stream implements StreamInterface
      *
      * @return bool
      */
-    public function isSeekable();
+    public function isSeekable(){
+    	if($this->isStreamAttached()){
+    		$this->isSeekable = false;
+    		$this->isSeekable = $this->getMetadata('seekable');
+    	}
+    	return $this->isSeekable;
+    }
 
     /**
      * Seek to a position in the stream.
@@ -181,7 +280,11 @@ class Stream implements StreamInterface
      *
      * @throws \RuntimeException on failure.
      */
-    public function seek($offset, $whence = SEEK_SET);
+    public function seek($offset, $whence = SEEK_SET){
+    	if (!$this->isSeekable() || fseek($this->stream, $offset, $whence) === -1) {
+    		throw new RuntimeException('Could not seek in stream');
+    	}
+    }
 
     /**
      * Seek to the beginning of the stream.
@@ -193,14 +296,20 @@ class Stream implements StreamInterface
      * @see http://www.php.net/manual/en/function.fseek.php
      * @throws \RuntimeException on failure.
      */
-    public function rewind();
+    public function rewind(){
+    	if (!$this->isSeekable() || rewind($this->stream) === false) {
+    		throw new RuntimeException('Could not rewind stream');
+    	}
+    }
 
     /**
      * Returns whether or not the stream is writable.
      *
      * @return bool
      */
-    public function isWritable();
+    public function isWritable(){
+    	return $this->isWritable;
+    }
 
     /**
      * Write data to the stream.
@@ -210,14 +319,22 @@ class Stream implements StreamInterface
      * @return int Returns the number of bytes written to the stream.
      * @throws \RuntimeException on failure.
      */
-    public function write($string);
-
+    public function write($string){
+    	if (!$this->isWritable() || ($output = fwrite($this->stream, $string)) === false) {
+    		throw new RuntimeException('Could not write to stream');
+    	}
+    	$this->streamSize = null;
+    	return $output;
+    }
+    
     /**
      * Returns whether or not the stream is readable.
      *
      * @return bool
      */
-    public function isReadable();
+    public function isReadable(){
+    	return $this->isReadable;
+    }
 
     /**
      * Read data from the stream.
@@ -230,7 +347,9 @@ class Stream implements StreamInterface
      *     if no bytes are available.
      * @throws \RuntimeException if an error occurs.
      */
-    public function read($length);
+    public function read($length){
+    	
+    }
 
     /**
      * Returns the remaining contents in a string
@@ -239,7 +358,12 @@ class Stream implements StreamInterface
      * @throws \RuntimeException if unable to read.
      * @throws \RuntimeException if error occurs while reading.
      */
-    public function getContents();
+    public function getContents(){
+    	if (!$this->isReadable() || ($contents = stream_get_contents($this->stream)) === false) {
+    		throw new RuntimeException('Could not get contents of stream');
+    	}
+    	return $contents;
+    }
 
     /**
      * Get stream metadata as an associative array or retrieve a specific key.
@@ -255,5 +379,11 @@ class Stream implements StreamInterface
      *     provided. Returns a specific key value if a key is provided and the
      *     value is found, or null if the key is not found.
      */
-    public function getMetadata($key = null);
+    public function getMetadata($key = null){
+    	$this->metadata = stream_get_meta_data($this->stream);
+    	if (is_null($key) === true) {
+    		return $this->metadata;
+    	}
+    	return isset($this->metadata[$key]) ? $this->metadata[$key] : null;
+    }
 }
