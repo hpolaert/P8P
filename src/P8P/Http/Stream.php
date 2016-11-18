@@ -22,6 +22,78 @@ use Psr\Http\Message\StreamInterface;
  */
 class Stream implements StreamInterface
 {
+    
+	/**
+	 * @var resource	Stream resource
+	 */
+	protected $stream;
+	
+    /**
+     * Constructor
+     * 
+     * Instantiate the stream object 
+     * [Not part of PSR7 Standard]
+     * 
+     * @param resource $stream PHP Resource object
+     * 
+     * @return void
+     */
+    public function __construct($stream){
+    	if($this->isValidResource($stream, __METHOD__)){
+    		$this->stream = $stream;
+    	}
+    }
+    
+    /**
+     * Is Stream Attached
+     *
+     * Check if the current stream is a valid resource
+     * [Not part of PSR7 Standard]
+     *
+     * @return boolean
+     */
+    public function isStreamAttached(){
+    	return is_resource($this->stream);
+    }
+    
+    /**
+     * Attach a stream to the current object
+     *
+     * Check if the current stream is a valid resource
+     * [Not part of PSR7 Standard]
+     * 
+     * @param resource $stream PHP Resource object
+     *
+     * @return boolean
+     */
+    public function attachStream($newStream){
+    	if($this->isValidResource($stream, __METHOD__)){
+    		if($this->isStreamAttached){
+    			$this->detach($stream);
+    		}
+    		$this->stream = $newStream;
+    	} 
+    }
+    
+    /**
+     * Is Valid Resource
+     *
+     * Check if the provided object is a valid resource
+     * [Not part of PSR7 Standard]
+     *
+     * @param resource $stream PHP Resource object
+     * @param string $method 
+     * 
+     * @throws ContainerException
+     * @return boolean
+     */
+    public function isValidResource($stream, $method){
+    	if (is_resource($stream) === false) {
+    		throw new InvalidArgumentException($method . ' argument must be a valid PHP resource');
+    	}
+    	return true;
+    }
+    
     /**
      * P8P - Basic implementation of PSR-7 Stream interface
      *
@@ -45,7 +117,13 @@ class Stream implements StreamInterface
      *
      * @return void
      */
-    public function close();
+    public function close(){
+    	if ($this->isAttached() === true) {
+    		fclose($this->stream);
+    	}
+    	$this->detach();
+    }
+    
 
     /**
      * Separates any underlying resources from the stream.
@@ -54,7 +132,9 @@ class Stream implements StreamInterface
      *
      * @return resource|null Underlying PHP stream, if any
      */
-    public function detach();
+    public function detach(){
+    	
+    }
 
     /**
      * Get the size of the stream if known.
@@ -76,7 +156,9 @@ class Stream implements StreamInterface
      *
      * @return bool
      */
-    public function eof();
+    public function eof(){
+    	return $this->isStreamAttached() ? feof($this->stream) : true;
+    }
 
     /**
      * Returns whether or not the stream is seekable.
