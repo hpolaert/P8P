@@ -236,11 +236,11 @@ class UriTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @Covers Uri::buildUriFromServerRequest
+     * @Covers Uri::buildUriFromRequest
      */
-    public function testBuildUriFromServerRequest()
+    public function testBuildUriFromRequest()
     {
-        $uri = Uri::buildUriFromServerRequest($this->MOCK_SERVER);
+        $uri = Uri::buildUriFromRequest($this->MOCK_SERVER);
         $this->assertEquals('http', $uri->getScheme());
         $this->assertEquals('hello=world', $uri->getQuery());
         $this->assertEquals('/test/hello/world.php', $uri->getPath());
@@ -250,9 +250,9 @@ class UriTest extends \PHPUnit_Framework_TestCase
      * @expectedException \RuntimeException
      * @expectedExceptionMessage Error, $_SERVER is null or empty
      */
-    public function testBuildUriFromServerRequestNullException()
+    public function testBuildUriFromRequestNullException()
     {
-        $uri = Uri::buildUriFromServerRequest([]);
+        $uri = Uri::buildUriFromRequest([]);
     }
 
     /**

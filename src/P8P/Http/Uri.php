@@ -91,7 +91,7 @@ class Uri implements UriInterface
      * @throws \RuntimeException
      * @return self
      */
-    public static function buildUriFromServerRequest(
+    public static function buildUriFromRequest(
         array $mock = null,
         bool $useForwardedHost = false,
         string $customHttpsPort = null

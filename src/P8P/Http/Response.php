@@ -31,6 +31,16 @@ use Psr\Http\Message\ResponseInterface;
 class Response extends Message implements ResponseInterface
 {
     /**
+     * Constructor
+     *
+     * Instantiate the response with the protocol version, status code,
+     * reason phrase, headers and message body
+     *
+     *
+     */
+
+
+    /**
      * Gets the response status code.
      *
      * The status code is a 3-digit integer result code of the server's attempt

@@ -119,11 +119,11 @@ class Message implements MessageInterface
     	foreach($this->headers as $key => $value) {
     		// Transform http keys 
     		if (strtolower(substr($key, 0, 5)) === 'http_') {
-    			$header = str_replace(' ', '-', ucwords(str_replace('_', ' ', strtolower(substr($key, 5)))));
+                $key = str_replace(' ', '-', ucwords(str_replace('_', ' ', strtolower(substr($key, 5)))));
     		}     
     		// Explode values to return headers as string[][] 
-    		$value = array_map('trim', explode(',', $value));
-    		$headers[$header] = $value;
+            $value         = array_map('trim', explode(',', $value));
+            $headers[$key] = $value;
     	}
     	return $headers;
     }
@@ -268,7 +268,7 @@ class Message implements MessageInterface
     	// Avoid unnecessary immutability if the header does not exist
     	if($this->hasHeader($name)){
     		$clone = clone $this;
-    		unset($clone->headers[$this->normalizeKey($key)]);
+            unset($clone->headers[$this->normalizeKey($name)]);
     		return $clone;
     				
     	}

@@ -9,7 +9,9 @@
 
 namespace P8P\Http;
 
+use InvalidArgumentException;
 use Psr\Http\Message\StreamInterface;
+use RuntimeException;
 
 /**
  * P8P - Basic implementation of PSR-7 Stream interface
@@ -105,15 +107,15 @@ class Stream implements StreamInterface
      *
      * Check if the current stream is a valid resource
      * [Not part of PSR7 Standard]
-     * 
-     * @param resource $stream PHP Resource object
+	 *
+	 * @param resource $newStream PHP Resource object
      *
      * @return boolean
      */
     public function attachStream($newStream){
-    	if($this->isValidResource($stream, __METHOD__)){
+		if ($this->isValidResource($newStream, __METHOD__)) {
     		if($this->isStreamAttached() === true){
-    			$this->detach($stream);
+				$this->detach();
     		}
     		$this->stream = $newStream;
     		$this->setStreamReadAndWriteAttributes();
@@ -145,9 +147,9 @@ class Stream implements StreamInterface
      * [Not part of PSR7 Standard]
      *
      * @param resource $stream PHP Resource object
-     * @param string $method 
-     * 
-     * @throws ContainerException
+     * @param string $method
+	 *
+	 * @throws \InvalidArgumentException
      * @return boolean
      */
     public function isValidResource($stream, $method){
@@ -191,7 +193,7 @@ class Stream implements StreamInterface
      * @return void
      */
     public function close(){
-    	if ($this->isAttached() === true) {
+		if ($this->isStreamAttached() === true) {
     		fclose($this->stream);
     	}
     	$this->detach();

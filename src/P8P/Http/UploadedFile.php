@@ -9,6 +9,7 @@
 
 namespace P8P\Http;
 
+use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UploadedFileInterface;
 
 /**
@@ -23,6 +24,114 @@ use Psr\Http\Message\UploadedFileInterface;
  */
 class UploadedFile implements UploadedFileInterface
 {
+    /**
+     * @var string File real name
+     */
+    protected $fileName;
+
+    /**
+     * @var string File size
+     */
+    protected $fileSize;
+
+    /**
+     * @var string File type
+     */
+    protected $fileMediaType;
+
+    /**
+     * @var string|null File if not a stream
+     */
+    protected $fileString;
+
+    /**
+     * @var StreamInterface|null File if stream
+     */
+    protected $fileStream;
+
+    /**
+     * @var boolean Indicate if the file has been moved
+     */
+    protected $fileMoved;
+
+    /**
+     * @var string Upload error status
+     */
+    protected $errorStatus;
+
+    /**
+     * @var array $errors
+     */
+    protected $errors = [
+        UPLOAD_ERR_OK,
+        UPLOAD_ERR_INI_SIZE,
+        UPLOAD_ERR_FORM_SIZE,
+        UPLOAD_ERR_PARTIAL,
+        UPLOAD_ERR_NO_FILE,
+        UPLOAD_ERR_NO_TMP_DIR,
+        UPLOAD_ERR_CANT_WRITE,
+        UPLOAD_ERR_EXTENSION,
+    ];
+
+    /**
+     * UploadedFileConstructor
+     * [Not part of PSR7 Standard]
+     *
+     * Build a single instance of an uploaded file
+     *
+     * Retrieve a stream representing the uploaded file.
+     *
+     * @throws \InvalidArgumentException Invalid file or resource
+     * return void
+     */
+    public function __construct(
+        $resourceOrFile,
+        $fileSize = null,
+        $errorStatus = UPLOAD_ERR_OK,
+        $fileName = null,
+        $fileMediaType = null
+    ) {
+        // Check if the provided file is a resource or a string
+        if (is_resource($resourceOrFile)) {
+            $this->fileStream = new Stream($resourceOrFile);
+        } else {
+            if (is_string($resourceOrFile)) {
+                $this->fileString = $resourceOrFile;
+            } else {
+                if ($resourceOrFile instanceof StreamInterface) {
+                    $this->fileStream = $resourceOrFile;
+                } else {
+                    throw new \InvalidArgumentException('Invalid stream or file provided');
+                }
+            }
+        }
+        // File size
+        if (!is_null($fileSize) && !is_int($fileSize)) {
+            throw new \InvalidArgumentException('Invalid file size');
+        } else {
+            $this->fileSize = $fileSize;
+        }
+        // Error status
+        if (!in_array($errorStatus, $this->errors)) {
+            throw new \InvalidArgumentException('Invalid error status');
+        } else {
+            $this->errorStatus = $errorStatus;
+        }
+        // File Name
+        if (!is_string($fileName)) {
+            throw new \InvalidArgumentException('Invalid file name');
+        } else {
+            $this->fileName = $fileName;
+        }
+        // File Media type
+        if (!is_string($fileMediaType)) {
+            throw new \InvalidArgumentException('Invalid file media type');
+        } else {
+            $this->fileMediaType = $fileMediaType;
+        }
+    }
+
+
     /**
      * Retrieve a stream representing the uploaded file.
      *
@@ -39,7 +148,16 @@ class UploadedFile implements UploadedFileInterface
      * @throws \RuntimeException in cases when no stream is available.
      * @throws \RuntimeException in cases when no stream can be created.
      */
-    public function getStream();
+    public function getStream()
+    {
+        if ($this->fileMoved) {
+            throw new \RuntimeException(sprintf('Uploaded file %1s has already been moved', $this->fileName));
+        }
+        if ($this->fileStream === null) {
+            $this->fileStream = new Stream(fopen($this->fileString, 'r'));
+        }
+        return $this->fileStream;
+    }
 
     /**
      * Move the uploaded file to a new location.
@@ -75,7 +193,53 @@ class UploadedFile implements UploadedFileInterface
      * @throws \RuntimeException on any error during the move operation.
      * @throws \RuntimeException on the second or subsequent call to the method.
      */
-    public function moveTo($targetPath);
+    public function moveTo($targetPath)
+    {
+        // First, check if the file has already been moved
+        if ($this->fileMoved === true) {
+            throw new \RuntimeException(sprintf('Uploaded file %1s has already been moved', $this->fileName));
+        }
+        // Second, check if error status is OK
+        if ($this->errorStatus !== UPLOAD_ERR_OK) {
+            throw new \RuntimeException(sprintf('Error while uploading file %1s', $this->fileName));
+        }
+        // Third, check target path
+        if (!is_string($targetPath) || empty($targetPath)) {
+            throw new \InvalidArgumentException('Invalid path provided for move operation; must be a non-empty string');
+        }
+        // Check if target path is writable
+        $targetIsStream = strpos($targetPath, '://') > 0;
+        if (!$targetIsStream && !is_writable(dirname($targetPath))) {
+            throw new \InvalidArgumentException('Upload target path is not writable');
+        }
+
+        // Finally try to move the file or stream
+        $isSapi = php_sapi_name() == 'cli';
+        if ($this->fileString && $isSapi) {
+            if (!is_uploaded_file($this->fileString)) {
+                throw new \RuntimeException(sprintf('Error moving uploaded file %1s to %2s', $this->fileName,
+                    $targetPath));
+            }
+            if (!move_uploaded_file($this->fileString, $targetPath)) {
+                throw new \RuntimeException(sprintf('Error removing uploaded file %1s', $this->fileName));
+            }
+            $this->fileMoved = true;
+        } else {
+            if (!copy($this->getStream(), $targetPath)) {
+                throw new \RuntimeException(sprintf('%1s is not a valid uploaded file', $this->fileName));
+            }
+            if (!unlink($this->fileStream)) {
+                throw new \RuntimeException(sprintf('Error moving uploaded file %1s to %2s', $this->fileName,
+                    $targetPath));
+            }
+            $this->fileMoved = true;
+        }
+
+        // Finally, if the file hasn't been moved at this point..
+        if ($this->fileMoved === false) {
+            throw new \RuntimeException(sprintf('Uploaded file could not be moved to %1s', $targetPath));
+        }
+    }
 
     /**
      * Retrieve the file size.
@@ -86,7 +250,10 @@ class UploadedFile implements UploadedFileInterface
      *
      * @return int|null The file size in bytes or null if unknown.
      */
-    public function getSize();
+    public function getSize()
+    {
+        return $this->fileSize;
+    }
 
     /**
      * Retrieve the error associated with the uploaded file.
@@ -102,7 +269,10 @@ class UploadedFile implements UploadedFileInterface
      * @see http://php.net/manual/en/features.file-upload.errors.php
      * @return int One of PHP's UPLOAD_ERR_XXX constants.
      */
-    public function getError();
+    public function getError()
+    {
+        return $this->errorStatus;
+    }
 
     /**
      * Retrieve the filename sent by the client.
@@ -117,7 +287,10 @@ class UploadedFile implements UploadedFileInterface
      * @return string|null The filename sent by the client or null if none
      *     was provided.
      */
-    public function getClientFilename();
+    public function getClientFilename()
+    {
+        return $this->fileName;
+    }
 
     /**
      * Retrieve the media type sent by the client.
@@ -132,5 +305,8 @@ class UploadedFile implements UploadedFileInterface
      * @return string|null The media type sent by the client or null if none
      *     was provided.
      */
-    public function getClientMediaType();
+    public function getClientMediaType()
+    {
+        return $this->fileMediaType;
+    }
 }
