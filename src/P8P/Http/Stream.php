@@ -9,9 +9,7 @@
 
 namespace P8P\Http;
 
-use InvalidArgumentException;
 use Psr\Http\Message\StreamInterface;
-use RuntimeException;
 
 /**
  * P8P - Basic implementation of PSR-7 Stream interface
@@ -154,7 +152,7 @@ class Stream implements StreamInterface
      */
     public function isValidResource($stream, $method){
     	if (is_resource($stream) === false) {
-    		throw new InvalidArgumentException($method . ' argument must be a valid PHP resource');
+    		throw new \InvalidArgumentException($method . ' argument must be a valid PHP resource');
     	}
     	return true;
     }
@@ -241,7 +239,7 @@ class Stream implements StreamInterface
      */
     public function tell(){
     	if (!$this->isStreamAttached() || ($position = ftell($this->stream)) === false) {
-    		throw new RuntimeException('Could not get the position of the pointer in stream');
+    		throw new \RuntimeException('Could not get the position of the pointer in stream');
     	}
     	return $position;
     }
@@ -284,7 +282,7 @@ class Stream implements StreamInterface
      */
     public function seek($offset, $whence = SEEK_SET){
     	if (!$this->isSeekable() || fseek($this->stream, $offset, $whence) === -1) {
-    		throw new RuntimeException('Could not seek in stream');
+    		throw new \RuntimeException('Could not seek in stream');
     	}
     }
 
@@ -300,7 +298,7 @@ class Stream implements StreamInterface
      */
     public function rewind(){
     	if (!$this->isSeekable() || rewind($this->stream) === false) {
-    		throw new RuntimeException('Could not rewind stream');
+    		throw new \RuntimeException('Could not rewind stream');
     	}
     }
 
@@ -323,7 +321,7 @@ class Stream implements StreamInterface
      */
     public function write($string){
     	if (!$this->isWritable() || ($output = fwrite($this->stream, $string)) === false) {
-    		throw new RuntimeException('Could not write to stream');
+    		throw new \RuntimeException('Could not write to stream');
     	}
     	$this->streamSize = null;
     	return $output;
@@ -362,7 +360,7 @@ class Stream implements StreamInterface
      */
     public function getContents(){
     	if (!$this->isReadable() || ($contents = stream_get_contents($this->stream)) === false) {
-    		throw new RuntimeException('Could not get contents of stream');
+    		throw new \RuntimeException('Could not get contents of stream');
     	}
     	return $contents;
     }

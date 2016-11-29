@@ -17,5 +17,7 @@ use P8P\Http\Request;
  */
 class RequestTest extends \PHPUnit_Framework_TestCase
 {
-
+	public function testNothing(){
+		$this->assertEquals(true, true);
+	}
 }

@@ -17,5 +17,7 @@ use P8P\Http\Stream;
  */
 class StreamTest extends \PHPUnit_Framework_TestCase
 {
-
+	public function testNothing(){
+		$this->assertEquals(true, true);
+	}
 }

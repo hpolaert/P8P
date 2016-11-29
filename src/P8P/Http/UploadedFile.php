@@ -13,7 +13,7 @@ use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UploadedFileInterface;
 
 /**
- * P8P - Basic implementation of PSR-7 Uploaded File interface
+ * P8P - Basic implement	 ation of PSR-7 Uploaded File interface
  *
  * Value object representing a file uploaded through an HTTP request.
  *
