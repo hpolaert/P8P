@@ -32,7 +32,6 @@ class MessageTest extends \PHPUnit_Framework_TestCase
 		ob_end_clean();
 		$expectedHeader = $customHeaderName . ': ' . $customHeaderValue;
 		$headers = xdebug_get_headers();
-		print_r($headers);
 		$this->assertContains($expectedHeader, $headers[0]);
 	}
 }
